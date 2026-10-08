@@ -8,42 +8,47 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
 <style>
   :root {
-    --green: #07583C;
-    --lime: #B3DD64;
-    --gold: #FCB952;
-    --red: #DF4636;
-    --ink: #1A2E1A;
-    --muted: #5A7A5A;
-    --rail: #F0F9F0;
-    --line: #D5E5D5;
-    --page: #FAFCFA;
-    --lime-soft: #EAF5CF;
-    --gold-soft: #FEEFD3;
-    --red-soft: #FBE1DD;
+    --green: #07583C; --lime: #B3DD64; --gold: #FCB952; --red: #DF4636;
+    --ink: #1A2E1A; --muted: #5A7A5A; --rail: #F0F9F0; --line: #D5E5D5; --page: #FAFCFA;
+    --lime-soft: #EAF5CF; --gold-soft: #FEEFD3; --red-soft: #FBE1DD;
   }
   * { box-sizing: border-box; }
   html { font-size: 15px; }
-  body {
-    margin: 0; background: var(--page); color: var(--ink);
-    font-family: 'Open Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
-    line-height: 1.5; font-variant-numeric: tabular-nums;
-  }
+  body { margin: 0; background: var(--page); color: var(--ink); font-family: 'Open Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; line-height: 1.5; font-variant-numeric: tabular-nums; }
   h1, h2, h3, p { margin: 0; }
+  [hidden] { display: none !important; }
   :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
-  .top { background: var(--green); color: #fff; padding: 20px 28px; border-bottom: 4px solid var(--lime); }
-  .top h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.01em; }
-  .top p { margin-top: 4px; color: #CFE6D6; max-width: 70ch; font-size: .93rem; }
+  .top { background: var(--green); color: #fff; padding: 14px 28px 0; border-bottom: 4px solid var(--lime); }
+  .toprow { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .top h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.01em; }
+  .top .sub { color: #CFE6D6; font-size: .86rem; max-width: 70ch; }
+  button.srv { font: inherit; font-size: .82rem; background: transparent; color: #fff; border: 1px solid #5E9A7F; border-radius: 4px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  button.srv:hover { background: #0A6E4C; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #8AA894; display: inline-block; }
+  .dot.on { background: var(--lime); } .dot.off { background: var(--gold); }
+  .tabs { display: flex; gap: 4px; margin-top: 10px; flex-wrap: wrap; }
+  .tabs button { font: inherit; font-size: .92rem; font-weight: 600; color: #CFE6D6; background: transparent; border: 0; padding: 9px 16px; cursor: pointer; border-bottom: 4px solid transparent; margin-bottom: -4px; }
+  .tabs button:hover { color: #fff; }
+  .tabs button[aria-selected=true] { color: #fff; border-bottom-color: var(--gold); }
 
-  .work { display: grid; grid-template-columns: 340px minmax(0, 1fr); min-height: calc(100vh - 92px); }
+  dialog { border: 1px solid var(--line); border-radius: 8px; padding: 22px 24px; width: min(520px, 94vw); color: var(--ink); }
+  dialog::backdrop { background: rgba(26, 46, 26, .45); }
+  dialog h2 { font-size: 1.1rem; color: var(--green); margin-bottom: 6px; }
+  dialog .row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .msg { margin-top: 10px; font-size: .86rem; }
+  .msg.ok { color: var(--green); } .msg.bad { color: #9B2A1C; }
+
+  .work { display: grid; grid-template-columns: 340px minmax(0, 1fr); min-height: calc(100vh - 120px); }
   .rail { background: var(--rail); border-right: 1px solid var(--line); padding: 22px 22px 40px; }
   .rail section + section { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--line); }
-  .rail h2 { font-size: 1rem; font-weight: 700; color: var(--green); margin-bottom: 10px; }
+  .rail h2, .page h2.t { font-size: 1rem; font-weight: 700; color: var(--green); margin-bottom: 10px; }
   .hint { color: var(--muted); font-size: .85rem; margin-bottom: 10px; }
 
-  .slot { display: block; border: 1.5px dashed #9DBE9D; border-radius: 6px; padding: 12px 14px; background: #fff; cursor: pointer; margin-bottom: 12px; }
+  .slot { display: block; border: 1.5px dashed #9DBE9D; border-radius: 6px; padding: 12px 14px; background: #fff; cursor: pointer; margin-bottom: 8px; }
   .slot:hover, .slot.over { background: var(--lime-soft); border-color: var(--green); }
   .slot.ok { border-style: solid; border-color: var(--green); }
   .slot.err { border-color: var(--red); background: var(--red-soft); }
@@ -53,15 +58,18 @@
   .slot input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
   .slot:focus-within { outline: 3px solid var(--gold); outline-offset: 2px; }
   .slot .msg-err { color: #9B2A1C; font-size: .85rem; margin-top: 6px; }
-  .verpick { margin: -4px 0 12px; font-size: .85rem; }
+  .verpick { margin: 0 0 8px; font-size: .85rem; }
   .verpick label { display: block; font-weight: 600; }
   .verpick select { margin-top: 4px; }
+  .slotwrap { margin-bottom: 12px; }
+  button.ghost { font: inherit; font-size: .84rem; font-weight: 600; background: #fff; color: var(--green); border: 1px solid var(--green); border-radius: 4px; padding: 6px 12px; cursor: pointer; }
+  button.ghost:hover { background: var(--lime-soft); }
+  button.ghost[disabled] { opacity: .5; cursor: default; }
 
   label.f { display: block; font-size: .85rem; font-weight: 600; margin: 12px 0 4px; }
-  select, input[type=text], input[type=number] {
-    width: 100%; font: inherit; font-size: .92rem; padding: 7px 9px;
-    border: 1px solid #9DBE9D; border-radius: 4px; background: #fff; color: var(--ink);
-  }
+  select, input[type=text], input[type=number], input[type=password], input[type=url], textarea {
+    width: 100%; font: inherit; font-size: .92rem; padding: 7px 9px; border: 1px solid #9DBE9D; border-radius: 4px; background: #fff; color: var(--ink); }
+  textarea { resize: vertical; min-height: 64px; }
 
   .months { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 4px 0 10px; }
   .mo { font-size: .75rem; text-align: center; padding: 5px 0; border-radius: 3px; background: #E4EEE4; color: var(--muted); }
@@ -76,7 +84,8 @@
   .cc input { margin-top: 3px; accent-color: var(--green); }
   .cc span.c { color: var(--muted); font-size: .78rem; }
 
-  .out { padding: 26px 32px 60px; min-width: 0; }
+  .out, .page { padding: 26px 32px 60px; min-width: 0; }
+  .page { max-width: 1180px; margin: 0 auto; }
   .empty { max-width: 52ch; margin-top: 8vh; }
   .empty h2 { font-size: 1.25rem; font-weight: 700; color: var(--green); }
   .empty p { margin-top: 8px; color: var(--muted); }
@@ -85,19 +94,17 @@
   .head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
   .head h2 { font-size: 1.25rem; font-weight: 700; color: var(--green); }
   .head p { color: var(--muted); font-size: .85rem; margin-top: 2px; }
-  button.dl {
-    font: inherit; font-weight: 600; font-size: .9rem; background: var(--green); color: #fff;
-    border: 0; border-radius: 4px; padding: 9px 16px; cursor: pointer;
-  }
+  button.dl { font: inherit; font-weight: 600; font-size: .9rem; background: var(--green); color: #fff; border: 0; border-radius: 4px; padding: 9px 16px; cursor: pointer; }
   button.dl:hover { background: #0A6E4C; }
+  button.dl[disabled] { opacity: .5; cursor: default; }
 
   .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 6px; margin: 18px 0 22px; background: #fff; }
+  .stats.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .stat { padding: 12px 16px; border-left: 1px solid var(--line); }
   .stat:first-child { border-left: 0; }
   .stat .v { font-size: 1.3rem; font-weight: 700; }
   .stat .l { font-size: .8rem; color: var(--muted); }
-  .stat.g .v { color: var(--green); }
-  .stat.r .v { color: var(--red); }
+  .stat.g .v { color: var(--green); } .stat.r .v { color: var(--red); }
 
   details.ccblock { border-top: 2px solid var(--green); margin-top: 24px; }
   details.ccblock > summary { list-style: none; cursor: pointer; padding: 10px 0; display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: baseline; }
@@ -111,100 +118,124 @@
 
   .tablewrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: .88rem; }
-  th { text-align: left; font-weight: 600; font-size: .8rem; color: var(--muted); padding: 6px 10px; border-bottom: 1px solid var(--line); background: #fff; position: sticky; top: 0; }
+  th { text-align: left; font-weight: 600; font-size: .8rem; color: var(--muted); padding: 6px 10px; border-bottom: 1px solid var(--line); background: #fff; }
   td { padding: 9px 10px; border-bottom: 1px solid #E6EFE6; vertical-align: top; }
   th.n, td.n { text-align: right; white-space: nowrap; }
   td .code { display: block; color: var(--muted); font-size: .75rem; }
-  .pos { color: var(--green); font-weight: 600; }
-  .neg { color: var(--red); font-weight: 600; }
+  .pos { color: var(--green); font-weight: 600; } .neg { color: var(--red); font-weight: 600; }
   .adj { display: flex; gap: 8px; align-items: baseline; white-space: nowrap; }
-  .adj .m { font-weight: 700; min-width: 2.4em; }
-  .adj .from { color: var(--muted); }
-  .adj .to { font-weight: 700; }
+  .adj .m { font-weight: 700; min-width: 2.4em; } .adj .from { color: var(--muted); } .adj .to { font-weight: 700; }
   .tag { display: inline-block; margin-top: 5px; font-size: .75rem; padding: 2px 8px; border-radius: 10px; }
-  .tag.sobra { background: var(--lime-soft); color: #2F5A12; }
-  .tag.estouro_destino, .tag.estouro_doador, .tag.estouro_dividido { background: var(--gold-soft); color: #7A4B00; }
-  .tag.estouro_parcial, .tag.sem_folga { background: var(--red-soft); color: #9B2A1C; }
+  .tag.sobra, .tag.ok { background: var(--lime-soft); color: #2F5A12; }
+  .tag.estouro_destino, .tag.estouro_doador, .tag.estouro_dividido, .tag.warn { background: var(--gold-soft); color: #7A4B00; }
+  .tag.estouro_parcial, .tag.sem_folga, .tag.bad { background: var(--red-soft); color: #9B2A1C; }
   .falta { display: block; font-size: .78rem; color: #9B2A1C; margin-top: 2px; }
 
   details.minor { margin-top: 30px; color: var(--muted); font-size: .88rem; }
   details.minor summary { cursor: pointer; font-weight: 600; color: var(--ink); }
   .note { margin-top: 18px; font-size: .82rem; color: var(--muted); }
+  .panel { border-top: 2px solid var(--green); margin-top: 24px; padding-top: 14px; }
+  .panel > h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
+  .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .inline { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  .inline input[type=text] { width: auto; flex: 1 1 260px; }
+
+  /* gestão */
+  .bars { margin-top: 8px; }
+  .barrow { display: grid; grid-template-columns: 210px minmax(0, 1fr) 170px; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid #E6EFE6; }
+  .barrow .nm { font-size: .88rem; } .barrow .nm span { display: block; color: var(--muted); font-size: .75rem; }
+  .bar { height: 11px; border-radius: 2px; margin: 2px 0; min-width: 2px; }
+  .bar.base { background: var(--green); } .bar.atual { background: var(--gold); }
+  .barrow .vals { font-size: .8rem; text-align: right; }
+  .barrow .vals b { display: block; font-size: .88rem; }
+  .keys { display: flex; gap: 16px; font-size: .8rem; color: var(--muted); margin-top: 6px; }
+  .keys i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; }
+  td input.just { min-width: 260px; }
 
   @media (max-width: 900px) {
     .work { grid-template-columns: 1fr; }
     .rail { border-right: 0; border-bottom: 1px solid var(--line); }
-    .out { padding: 20px 16px 50px; }
-    .stats { grid-template-columns: 1fr 1fr; }
-    .stat:nth-child(3) { border-left: 0; }
-    .stat:nth-child(n+3) { border-top: 1px solid var(--line); }
+    .out, .page { padding: 20px 16px 50px; }
+    .stats, .stats.three { grid-template-columns: 1fr 1fr; }
+    .stat:nth-child(3) { border-left: 0; } .stat:nth-child(n+3) { border-top: 1px solid var(--line); }
+    .grid2 { grid-template-columns: 1fr; }
+    .barrow { grid-template-columns: 1fr; gap: 4px; } .barrow .vals { text-align: left; }
+    .top { padding: 12px 16px 0; }
   }
-  @media (prefers-reduced-motion: no-preference) {
-    .slot, .mo { transition: background .15s, border-color .15s; }
-  }
+  @media (prefers-reduced-motion: no-preference) { .slot, .mo { transition: background .15s, border-color .15s; } }
 </style>
 </head>
 <body>
 <header class="top">
-  <h1>Replanejador SSMA</h1>
-  <p>Compara o planejado com o realizado do mês fechado e mostra onde recolocar cada sobra e cada estouro. Os arquivos são lidos no seu navegador e não saem do computador.</p>
+  <div class="toprow">
+    <div>
+      <h1>Replanejador SSMA</h1>
+      <p class="sub">Compara o planejado com o realizado do mês fechado e mostra onde recolocar cada sobra e cada estouro. Os arquivos são lidos no seu navegador.</p>
+    </div>
+    <button class="srv" id="srvBtn" type="button"><i class="dot" id="srvDot"></i><span id="srvTxt">Servidor: não configurado</span></button>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Seções">
+    <button role="tab" data-tab="replanejar" aria-selected="true">Replanejar</button>
+    <button role="tab" data-tab="conferir" aria-selected="false">Conferir lançamento</button>
+    <button role="tab" data-tab="gestao" aria-selected="false">Gestão</button>
+    <button role="tab" data-tab="historico" aria-selected="false">Histórico</button>
+  </nav>
 </header>
 
-<main class="work">
-  <aside class="rail" aria-label="Configuração">
-    <section>
-      <h2>Arquivos exportados do SAC</h2>
-      <p class="hint">Aceita o relatório de Planejamento de despesas ou o Comparativo de versão.</p>
+<dialog id="srvDlg">
+  <h2>Servidor (Google Apps Script)</h2>
+  <p class="hint">Guarda o histórico dos ciclos e o plano confirmado, que vira o plano anterior do ciclo seguinte. Sem servidor o app funciona, mas você sobe os arquivos a cada vez.</p>
+  <label class="f" for="srvUrl">Endereço da implantação (termina em /exec)</label>
+  <input type="url" id="srvUrl" placeholder="https://script.google.com/macros/s/.../exec">
+  <label class="f" for="srvTok">Senha (propriedade TOKEN do script)</label>
+  <input type="password" id="srvTok" autocomplete="off">
+  <div class="msg" id="srvMsg" role="status"></div>
+  <div class="row">
+    <button class="dl" id="srvSave" type="button">Salvar e testar</button>
+    <button class="ghost" id="srvClear" type="button">Remover</button>
+    <button class="ghost" id="srvClose" type="button">Fechar</button>
+  </div>
+</dialog>
 
-      <label class="slot" id="slot0" tabindex="-1">
-        <b>Plano anterior</b>
-        <small>O que estava planejado antes de fechar o mês (exportação do fim do ciclo passado).</small>
-        <input type="file" accept=".xlsx,.xls" id="file0">
-        <div class="fname" id="fname0">Clique ou arraste o arquivo aqui</div>
-      </label>
-      <div class="verpick" id="ver0" hidden></div>
-
-      <label class="slot" id="slot1" tabindex="-1">
-        <b>Plano atual</b>
-        <small>A nova versão, já com o realizado do mês fechado.</small>
-        <input type="file" accept=".xlsx,.xls" id="file1">
-        <div class="fname" id="fname1">Clique ou arraste o arquivo aqui</div>
-      </label>
-      <div class="verpick" id="ver1" hidden></div>
-    </section>
-
-    <section>
-      <h2>Mês do ciclo</h2>
-      <div class="months" id="timeline" aria-hidden="true"></div>
-      <div class="legend">
-        <span><i style="background:var(--green)"></i>Mês fechado</span>
-        <span><i style="background:var(--gold)"></i>Mês destino</span>
-      </div>
-      <label class="f" for="closed">Mês fechado</label>
-      <select id="closed"></select>
-      <label class="f" for="dest">Mês destino (onde recolocar a sobra)</label>
-      <select id="dest"></select>
-    </section>
-
-    <section>
-      <h2>Centros de custo</h2>
-      <div id="ccList"><p class="hint">Aparecem depois que você subir os arquivos.</p></div>
-    </section>
-
-    <section>
-      <h2>Regras</h2>
-      <label class="f" for="prefixes">Contas fora do escopo (começam com)</label>
-      <input type="text" id="prefixes" value="4121, 4122, 4123, 4128">
-      <label class="f" for="except">Exceções que ficam no escopo</label>
-      <input type="text" id="except" value="4121421007">
-      <label class="f" for="ignore">Contas que você trata à parte</label>
-      <input type="text" id="ignore" value="4121421007, 4126421300">
-      <label class="f" for="minabs">Ignorar diferenças menores que (R$)</label>
-      <input type="number" id="minabs" value="1" min="0" step="0.5">
-    </section>
-  </aside>
-
-  <section class="out" id="out" aria-live="polite"></section>
+<main>
+  <div class="tab" id="tab-replanejar">
+    <div class="work">
+      <aside class="rail" aria-label="Configuração">
+        <section>
+          <h2>Arquivos exportados do SAC</h2>
+          <p class="hint">Aceita o relatório de Planejamento de despesas ou o Comparativo de versão.</p>
+          <div class="slotwrap" id="slot0"></div>
+          <div class="slotwrap" id="slot1"></div>
+        </section>
+        <section>
+          <h2>Mês do ciclo</h2>
+          <div class="months" id="timeline" aria-hidden="true"></div>
+          <div class="legend"><span><i style="background:var(--green)"></i>Mês fechado</span><span><i style="background:var(--gold)"></i>Mês destino</span></div>
+          <label class="f" for="closed">Mês fechado</label><select id="closed"></select>
+          <label class="f" for="dest">Mês destino (onde recolocar a sobra)</label><select id="dest"></select>
+        </section>
+        <section>
+          <h2>Centros de custo</h2>
+          <div id="ccList"><p class="hint">Aparecem depois que você subir os arquivos.</p></div>
+        </section>
+        <section>
+          <h2>Regras</h2>
+          <label class="f" for="prefixes">Contas fora do escopo (começam com)</label>
+          <input type="text" id="prefixes" value="4121, 4122, 4123, 4128">
+          <label class="f" for="except">Exceções que ficam no escopo</label>
+          <input type="text" id="except" value="4121421007">
+          <label class="f" for="ignore">Contas que você trata à parte</label>
+          <input type="text" id="ignore" value="4121421007, 4126421300">
+          <label class="f" for="minabs">Ignorar diferenças menores que (R$)</label>
+          <input type="number" id="minabs" value="1" min="0" step="0.5">
+        </section>
+      </aside>
+      <section class="out" id="out" aria-live="polite"></section>
+    </div>
+  </div>
+  <div class="tab" id="tab-conferir" hidden><div class="page" id="conferir"></div></div>
+  <div class="tab" id="tab-gestao" hidden><div class="page" id="gestao"></div></div>
+  <div class="tab" id="tab-historico" hidden><div class="page" id="historico"></div></div>
 </main>
 
 <script>
@@ -243,7 +274,18 @@
   }
 
   // Converte as linhas da planilha em { map: "cc||conta" -> {cc, conta, v[12]} }
-  function parseRows(rows, version) {
+  // "..._VERSÃO__Sf2026-27_v8_vs__FC-26__5_07__GE__.xlsx" -> ["Sf2026-27_v8", "FC-26 (5+07) GE"]
+  function labelsFromName(name) {
+    var n = String(name || '').replace(/\.xlsx?$/i, '').replace(/__\d+_$/, '');
+    var m = n.match(/^(.*?)_vs_+(.*)$/i);
+    if (!m) return null;
+    var tidy = function (s) {
+      return s.replace(/^_+|_+$/g, '').replace(/__+/g, ' ').replace(/(\d+)_(\d+)/g, '($1+$2)').replace(/\s+/g, ' ').trim();
+    };
+    return [tidy(m[1].replace(/^.*?VERS[ÃA]O_+/i, '')), tidy(m[2])];
+  }
+
+  function parseRows(rows, version, name) {
     var fmt = detectFormat(rows);
     if (!fmt) throw new Error('Não reconheci o formato. Use a exportação do relatório de Planejamento ou do Comparativo de versão.');
     var map = new Map();
@@ -262,7 +304,7 @@
       }
     } else {
       version = version === 1 ? 1 : 2;
-      label = 'Coluna VERSÃO 0' + version;
+      label = (labelsFromName(name) || [])[version - 1] || ('Coluna VERSÃO 0' + version);
       var cur = null;
       for (i = 3; i < rows.length; i++) {
         r = rows[i];
@@ -387,10 +429,86 @@
     return '\ufeff' + lines.join('\r\n');
   }
 
+
+  // Monta um "plano" a partir das linhas guardadas no servidor
+  function fromRows(rows, label) {
+    var map = new Map();
+    (rows || []).forEach(function (r) {
+      var cc = String(r.cc).trim(), conta = String(r.conta).trim();
+      map.set(cc + '||' + conta, { cc: cc, conta: conta, v: (r.v || []).map(num) });
+    });
+    return { fmt: 'srv', label: label || '', map: map };
+  }
+  function toRows(plan) {
+    var out = [];
+    plan.map.forEach(function (r) { out.push({ cc: r.cc, conta: r.conta, v: r.v.map(r2) }); });
+    return out;
+  }
+
+  // Confere o que foi lançado no SAC contra a proposta do ciclo.
+  // p: { items, plan2, launched, closedIdx, tol, ccs, excludedPrefixes, exceptions, ignore }
+  function conferir(p) {
+    var exp = new Map(), res = { ok: [], naoLancado: [], diferente: [], ausentes: [], fora: [] };
+    p.items.forEach(function (it) {
+      it.adj.forEach(function (a) {
+        var key = it.cc + '||' + it.conta;
+        exp.set(key + '|' + a.m, 1);
+        var L = p.launched.map.get(key);
+        var row = { cc: it.cc, conta: it.conta, m: a.m, from: a.from, to: a.to, tipo: it.type };
+        if (!L) { res.ausentes.push(row); return; }
+        row.lancado = r2(L.v[a.m]);
+        if (Math.abs(L.v[a.m] - a.to) <= p.tol) res.ok.push(row);
+        else if (Math.abs(L.v[a.m] - a.from) <= p.tol) res.naoLancado.push(row);
+        else res.diferente.push(row);
+      });
+    });
+    var sel = new Set(p.ccs), exc = new Set(p.exceptions), ign = new Set(p.ignore);
+    p.launched.map.forEach(function (L, key) {
+      var B = p.plan2.map.get(key);
+      if (!B || !sel.has(ccCode(L.cc))) return;
+      var code = accCode(L.conta);
+      if (!(exc.has(code) || !p.excludedPrefixes.some(function (x) { return code.indexOf(x) === 0; }))) return;
+      for (var m = p.closedIdx + 1; m < 12; m++) {
+        if (exp.has(key + '|' + m)) continue;
+        if (Math.abs(L.v[m] - B.v[m]) > p.tol) {
+          res.fora.push({ cc: L.cc, conta: L.conta, m: m, from: r2(B.v[m]), lancado: r2(L.v[m]), aParte: ign.has(code) });
+        }
+      }
+    });
+    return res;
+  }
+
+  function sum12(v) { var t = 0; for (var i = 0; i < 12; i++) t += v[i]; return t; }
+
+  // Total da safra por centro de custo
+  function totalsByCC(plan) {
+    var out = new Map();
+    plan.map.forEach(function (r) {
+      var k = ccCode(r.cc), o = out.get(k) || { cc: r.cc, raw: 0, total: 0 };
+      o.raw += sum12(r.v); out.set(k, o);
+    });
+    out.forEach(function (o) { o.total = r2(o.raw); });
+    return out;
+  }
+
+  // Variação de cada conta (total da safra) entre a base e a situação atual
+  function movements(base, atual) {
+    var keys = new Set(), out = [];
+    base.map.forEach(function (_, k) { keys.add(k); });
+    atual.map.forEach(function (_, k) { keys.add(k); });
+    keys.forEach(function (k) {
+      var b = base.map.get(k), a = atual.map.get(k), ref = a || b;
+      var vb = b ? r2(sum12(b.v)) : 0, va = a ? r2(sum12(a.v)) : 0;
+      out.push({ cc: ref.cc, conta: ref.conta, code: accCode(ref.conta), base: vb, atual: va, diff: r2(va - vb) });
+    });
+    return out;
+  }
+
   var api = {
     MONTHS: MONTHS, num: num, r2: r2, accCode: accCode, ccCode: ccCode, ccName: ccName, unitOf: unitOf,
-    detectFormat: detectFormat, parseRows: parseRows, splitList: splitList,
-    compute: compute, summarize: summarize, toCSV: toCSV, TYPE_TEXT: TYPE_TEXT
+    detectFormat: detectFormat, parseRows: parseRows, labelsFromName: labelsFromName, splitList: splitList,
+    compute: compute, summarize: summarize, toCSV: toCSV, TYPE_TEXT: TYPE_TEXT,
+    fromRows: fromRows, toRows: toRows, conferir: conferir, totalsByCC: totalsByCC, movements: movements
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ReplanCore = api;
@@ -401,43 +519,77 @@
 (function () {
   'use strict';
   var C = window.ReplanCore;
-  var $ = function (s) { return document.querySelector(s); };
-  var DEFAULT_CCS = ['1130739002', '1230739002', '1130739004', '1230739004'];
-  var STORE = 'replanejador.ssma.v1';
-  var state = { f: [null, null], selected: null, last: null };
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
 
   function esc(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
+    return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
   }
   function fmt(n) { return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function sgn(n) { return (n > 0 ? '+' : '') + fmt(n); }
-
-  // ---------- preferências salvas no navegador ----------
-  function loadPrefs() {
-    try {
-      var p = JSON.parse(localStorage.getItem(STORE) || '{}');
-      ['prefixes', 'except', 'ignore', 'minabs'].forEach(function (id) { if (p[id] !== undefined) $('#' + id).value = p[id]; });
-    } catch (e) { /* sem armazenamento: segue com os padrões */ }
-  }
-  function savePrefs() {
-    try {
-      var p = {};
-      ['prefixes', 'except', 'ignore', 'minabs'].forEach(function (id) { p[id] = $('#' + id).value; });
-      localStorage.setItem(STORE, JSON.stringify(p));
-    } catch (e) { /* ignora */ }
+  function hoje() { return new Date().toLocaleDateString('pt-BR'); }
+  function dataBR(iso) {
+    var d = new Date(iso);
+    return isNaN(d) ? String(iso || '') : d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   }
 
-  // ---------- leitura dos arquivos ----------
+  /* ---------- servidor ---------- */
+  var CFG = 'replanejador.cfg.v1';
+  function getCfg() { try { return JSON.parse(localStorage.getItem(CFG) || '{}'); } catch (e) { return {}; } }
+  function setCfg(c) { try { localStorage.setItem(CFG, JSON.stringify(c)); } catch (e) { /* sem armazenamento */ } }
+  function hasServer() { var c = getCfg(); return !!(c.url && c.token); }
+
+  function api(action, payload) {
+    var c = getCfg();
+    if (!c.url || !c.token) return Promise.reject(new Error('Configure o servidor no botão do topo.'));
+    var body = JSON.stringify(Object.assign({ token: c.token, action: action }, payload || {}));
+    return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body, redirect: 'follow' })
+      .catch(function () { throw new Error('Não consegui falar com o servidor. Confira o endereço e se a implantação está com acesso "Qualquer pessoa".'); })
+      .then(function (r) { if (!r.ok) throw new Error('O servidor respondeu ' + r.status + '.'); return r.json(); })
+      .then(function (j) { if (!j.ok) throw new Error(j.error || 'Erro no servidor.'); return j; });
+  }
+
+  var srvState = 'none';
+  function paintServer() {
+    var dot = $('#srvDot'), txt = $('#srvTxt');
+    dot.className = 'dot' + (srvState === 'on' ? ' on' : srvState === 'off' ? ' off' : '');
+    txt.textContent = srvState === 'none' ? 'Servidor: não configurado' : srvState === 'on' ? 'Servidor conectado' : srvState === 'wait' ? 'Servidor: conectando' : 'Servidor sem resposta';
+    document.dispatchEvent(new Event('srvchange'));
+  }
+  function pingServer() {
+    if (!hasServer()) { srvState = 'none'; paintServer(); return Promise.resolve(false); }
+    srvState = 'wait'; paintServer();
+    return api('ping').then(function () { srvState = 'on'; paintServer(); return true; })
+      .catch(function (e) { srvState = 'off'; paintServer(); throw e; });
+  }
+
+  var dlg = $('#srvDlg');
+  $('#srvBtn').addEventListener('click', function () {
+    var c = getCfg(); $('#srvUrl').value = c.url || ''; $('#srvTok').value = c.token || ''; $('#srvMsg').textContent = '';
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+  });
+  function closeDlg() { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
+  $('#srvClose').addEventListener('click', closeDlg);
+  $('#srvClear').addEventListener('click', function () { setCfg({}); srvState = 'none'; paintServer(); $('#srvUrl').value = ''; $('#srvTok').value = ''; $('#srvMsg').textContent = 'Servidor removido deste navegador.'; $('#srvMsg').className = 'msg ok'; });
+  $('#srvSave').addEventListener('click', function () {
+    var url = $('#srvUrl').value.trim(), tok = $('#srvTok').value;
+    var m = $('#srvMsg');
+    if (!/^https:\/\/.+/.test(url) && !/^http:\/\/localhost/.test(url)) { m.className = 'msg bad'; m.textContent = 'O endereço precisa começar com https://.'; return; }
+    if (!tok) { m.className = 'msg bad'; m.textContent = 'Informe a senha.'; return; }
+    setCfg({ url: url, token: tok });
+    m.className = 'msg'; m.textContent = 'Testando...';
+    pingServer().then(function () { m.className = 'msg ok'; m.textContent = 'Conectado.'; })
+      .catch(function (e) { m.className = 'msg bad'; m.textContent = e.message; });
+  });
+
+  /* ---------- leitura de arquivos ---------- */
   function readRows(file) {
     return new Promise(function (resolve, reject) {
       var fr = new FileReader();
       fr.onload = function (e) {
         try {
           var wb = XLSX.read(e.target.result, { type: 'array' });
-          var ws = wb.Sheets[wb.SheetNames[0]];
-          resolve(XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null }));
+          resolve(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: null }));
         } catch (err) { reject(err); }
       };
       fr.onerror = function () { reject(fr.error || new Error('Não consegui ler o arquivo.')); };
@@ -445,125 +597,82 @@
     });
   }
 
-  function slotUI(i) {
-    var slot = $('#slot' + i), name = $('#fname' + i), ver = $('#ver' + i), f = state.f[i];
-    slot.classList.remove('ok', 'err');
-    if (!f) { name.textContent = 'Clique ou arraste o arquivo aqui'; ver.hidden = true; return; }
-    if (f.error) {
-      slot.classList.add('err');
-      name.innerHTML = esc(f.name) + '<div class="msg-err">' + esc(f.error) + '</div>';
-      ver.hidden = true; return;
+  // Caixa de arquivo reutilizável. o: { title, hint, defaultVersion, onChange, server: { label, load() } }
+  function FileSlot(root, o) {
+    var self = { value: null };
+    root.innerHTML =
+      '<label class="slot"><b>' + esc(o.title) + '</b><small>' + esc(o.hint) + '</small>' +
+      '<input type="file" accept=".xlsx,.xls"><div class="fname">Clique ou arraste o arquivo aqui</div></label>' +
+      '<div class="verpick" hidden></div>' +
+      (o.server ? '<button type="button" class="ghost srvload" hidden>' + esc(o.server.label) + '</button><div class="msg"></div>' : '');
+    var slot = $('.slot', root), inp = $('input', root), name = $('.fname', root), ver = $('.verpick', root);
+    var btn = $('.srvload', root), msg = $('.msg', root);
+
+    function changed() { if (o.onChange) o.onChange(self.value); }
+    function draw() {
+      slot.classList.remove('ok', 'err');
+      var f = self.value;
+      if (!f) { name.textContent = 'Clique ou arraste o arquivo aqui'; ver.hidden = true; return; }
+      if (f.error) {
+        slot.classList.add('err');
+        name.innerHTML = esc(f.name) + '<div class="msg-err">' + esc(f.error) + '</div>'; ver.hidden = true; return;
+      }
+      slot.classList.add('ok');
+      var kind = f.fmt === 'plan' ? 'Planejamento' : f.fmt === 'comp' ? 'Comparativo de versão' : 'Guardado no servidor';
+      name.innerHTML = esc(f.name) + '<br>' + kind + (f.parsed.label ? ', ' + esc(f.parsed.label) : '') + ', ' + f.parsed.map.size + ' contas';
+      if (f.fmt === 'comp') {
+        ver.hidden = false;
+        ver.innerHTML = '<label>Usar a coluna <select><option value="2"' + (f.version === 2 ? ' selected' : '') + '>VERSÃO 02</option><option value="1"' + (f.version === 1 ? ' selected' : '') + '>VERSÃO 01</option></select></label>';
+        $('select', ver).addEventListener('change', function (e) {
+          f.version = +e.target.value; f.parsed = C.parseRows(f.rows, f.version, f.name); draw(); changed();
+        });
+      } else { ver.hidden = true; }
     }
-    slot.classList.add('ok');
-    var kind = f.fmt === 'plan' ? 'Planejamento' : 'Comparativo de versão';
-    name.innerHTML = esc(f.name) + '<br>' + kind + (f.parsed.label ? ', ' + esc(f.parsed.label) : '') + ', ' + f.parsed.map.size + ' contas';
-    if (f.fmt === 'comp') {
-      ver.hidden = false;
-      ver.innerHTML = '<label>Usar a coluna <select data-slot="' + i + '">' +
-        '<option value="2"' + (f.version === 2 ? ' selected' : '') + '>VERSÃO 02</option>' +
-        '<option value="1"' + (f.version === 1 ? ' selected' : '') + '>VERSÃO 01</option></select></label>';
-      ver.querySelector('select').addEventListener('change', function (e) {
-        f.version = +e.target.value; f.parsed = C.parseRows(f.rows, f.version); refresh();
+    self.set = function (v) { self.value = v; draw(); changed(); };
+    self.get = function () { return self.value && !self.value.error ? self.value : null; };
+    self.load = function (file) {
+      if (!file) return;
+      if (typeof XLSX === 'undefined') { self.set({ name: file.name, error: 'A biblioteca de leitura de Excel não carregou. Abra a página com internet.' }); return; }
+      readRows(file).then(function (rows) {
+        var f = C.detectFormat(rows);
+        if (!f) throw new Error('Formato não reconhecido. Use a exportação de Planejamento de despesas ou de Comparativo de versão.');
+        var v = { name: file.name, rows: rows, fmt: f, version: o.defaultVersion || 2 };
+        v.parsed = C.parseRows(rows, v.version, file.name);
+        if (!v.parsed.map.size) throw new Error('Não encontrei contas no arquivo. Exporte com a opção "Todos" no escopo.');
+        self.set(v);
+      }).catch(function (err) { self.set({ name: file.name, error: err.message }); });
+    };
+    inp.addEventListener('change', function () { self.load(inp.files[0]); inp.value = ''; });
+    slot.addEventListener('dragover', function (e) { e.preventDefault(); slot.classList.add('over'); });
+    slot.addEventListener('dragleave', function () { slot.classList.remove('over'); });
+    slot.addEventListener('drop', function (e) { e.preventDefault(); slot.classList.remove('over'); if (e.dataTransfer.files[0]) self.load(e.dataTransfer.files[0]); });
+    if (btn) {
+      var sync = function () { btn.hidden = !hasServer(); };
+      document.addEventListener('srvchange', sync); sync();
+      btn.addEventListener('click', function () {
+        msg.className = 'msg'; msg.textContent = 'Buscando...';
+        o.server.load().then(function (v) {
+          if (!v) { msg.className = 'msg bad'; msg.textContent = 'Ainda não há nada guardado no servidor.'; return; }
+          msg.textContent = ''; self.set(v);
+        }).catch(function (e) { msg.className = 'msg bad'; msg.textContent = e.message; });
       });
-    } else { ver.hidden = true; }
-  }
-
-  function onFile(i, file) {
-    if (!file) return;
-    if (typeof XLSX === 'undefined') {
-      state.f[i] = { name: file.name, error: 'A biblioteca de leitura de Excel não carregou. Abra a página com internet.' };
-      refresh(); return;
     }
-    readRows(file).then(function (rows) {
-      var fmt = C.detectFormat(rows);
-      if (!fmt) throw new Error('Formato não reconhecido. Use a exportação de Planejamento de despesas ou de Comparativo de versão.');
-      var f = { name: file.name, rows: rows, fmt: fmt, version: 2 };
-      f.parsed = C.parseRows(rows, f.version);
-      if (!f.parsed.map.size) throw new Error('Não encontrei contas no arquivo. Exporte com a opção "Todos" no escopo.');
-      state.f[i] = f;
-    }).catch(function (err) {
-      state.f[i] = { name: file.name, error: err.message };
-    }).then(refresh);
+    return self;
   }
 
-  // ---------- controles ----------
-  function fillMonths(resetDest) {
-    var closed = $('#closed'), M = C.MONTHS;
-    if (!closed.options.length) {
-      var d = new Date(), pm = (d.getMonth() + 11) % 12, idx = (pm - 3 + 12) % 12; // mês anterior, na ordem da safra
-      M.forEach(function (m, i) { var o = document.createElement('option'); o.value = i; o.textContent = m; closed.appendChild(o); });
-      closed.value = Math.min(idx, 10);
-    }
-    var dest = $('#dest'), c = +closed.value, prev = dest.value;
-    dest.innerHTML = '';
-    for (var i = c + 1; i < 12; i++) { var o = document.createElement('option'); o.value = i; o.textContent = M[i]; dest.appendChild(o); }
-    if (!dest.options.length) return;
-    var want = !resetDest && prev !== '' && +prev > c ? +prev : Math.min(c + 3, 11);
-    dest.value = want;
-  }
-
-  function timeline() {
-    var c = +$('#closed').value, d = $('#dest').value === '' ? -1 : +$('#dest').value;
-    $('#timeline').innerHTML = C.MONTHS.map(function (m, i) {
-      var cls = i < c ? 'past' : i === c ? 'closed' : i === d ? 'dest' : 'open';
-      return '<div class="mo ' + cls + '">' + m + '</div>';
-    }).join('');
-  }
-
-  function ccOptions() {
-    var seen = new Map();
-    state.f.forEach(function (f) {
-      if (f && f.parsed) f.parsed.map.forEach(function (r) { var k = C.ccCode(r.cc); if (!seen.has(k)) seen.set(k, r.cc); });
-    });
-    return Array.from(seen.entries()).sort(function (a, b) { return a[0].localeCompare(b[0]); });
-  }
-
-  function buildCCList() {
-    var opts = ccOptions(), box = $('#ccList');
-    if (!opts.length) { box.innerHTML = '<p class="hint">Aparecem depois que você subir os arquivos.</p>'; return; }
-    if (!state.selected) state.selected = new Set(opts.map(function (o) { return o[0]; }).filter(function (c) { return DEFAULT_CCS.indexOf(c) >= 0; }));
-    box.innerHTML = opts.map(function (o) {
-      var code = o[0], full = o[1], u = C.unitOf(full);
-      return '<label class="cc"><input type="checkbox" value="' + esc(code) + '"' + (state.selected.has(code) ? ' checked' : '') + '>' +
-        '<div>' + esc(C.ccName(full)) + (u ? ' (' + u + ')' : '') + '<br><span class="c">' + esc(code) + '</span></div></label>';
-    }).join('');
-    box.querySelectorAll('input').forEach(function (cb) {
-      cb.addEventListener('change', function () {
-        if (cb.checked) state.selected.add(cb.value); else state.selected.delete(cb.value);
-        render();
-      });
+  // Plano guardado no servidor, no mesmo formato de um arquivo carregado
+  function serverPlan(tipo) {
+    return api('lastSnapshot', { tipo: tipo }).then(function (j) {
+      if (j.empty) return null;
+      var label = j.snap.rotulo || (tipo === 'base' ? 'Base oficial' : 'Último ciclo');
+      return { name: 'Servidor: ' + label, fmt: 'srv', version: 0, rows: null, parsed: C.fromRows(j.rows, label), snap: j.snap };
     });
   }
 
-  // ---------- resultado ----------
-  function adjHTML(it) {
-    var h = it.adj.map(function (a) {
-      return '<div class="adj"><span class="m">' + C.MONTHS[a.m] + '</span><span class="from">' + fmt(a.from) +
-        '</span><span>→</span><span class="to">' + fmt(a.to) + '</span></div>';
-    }).join('');
-    h += '<span class="tag ' + it.type + '">' + esc(C.TYPE_TEXT[it.type]) + '</span>';
-    if (it.uncovered > 0) h += '<span class="falta">Faltam ' + fmt(it.uncovered) + ' sem cobertura</span>';
-    return h;
-  }
-
-  function rowHTML(it, withAdj) {
-    return '<tr><td>' + esc(it.conta.replace(/^\d+\s*/, '')) + '<span class="code">' + esc(it.code) + '</span></td>' +
-      '<td class="n">' + fmt(it.planned) + '</td><td class="n">' + fmt(it.actual) + '</td>' +
-      '<td class="n ' + (it.diff > 0 ? 'pos' : 'neg') + '">' + sgn(it.diff) + '</td>' +
-      (withAdj ? '<td>' + adjHTML(it) + '</td>' : '') + '</tr>';
-  }
-
-  function tableHTML(items, withAdj) {
-    return '<div class="tablewrap"><table><thead><tr><th>Conta razão</th><th class="n">Planejado</th><th class="n">Realizado</th>' +
-      '<th class="n">Sobra / estouro</th>' + (withAdj ? '<th>Ajuste proposto</th>' : '') + '</tr></thead><tbody>' +
-      items.map(function (it) { return rowHTML(it, withAdj); }).join('') + '</tbody></table></div>';
-  }
-
-  function params() {
+  /* ---------- regras compartilhadas ---------- */
+  var state = { selected: null, last: null, cycleId: null };
+  function rules() {
     return {
-      plan1: state.f[0].parsed, plan2: state.f[1].parsed,
-      closedIdx: +$('#closed').value, destIdx: +$('#dest').value,
-      ccs: Array.from(state.selected || []),
       excludedPrefixes: C.splitList($('#prefixes').value),
       exceptions: C.splitList($('#except').value),
       ignore: C.splitList($('#ignore').value),
@@ -571,52 +680,185 @@
     };
   }
 
+  /* ---------- abas ---------- */
+  function showTab(name) {
+    $$('.tabs button').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.tab === name)); });
+    $$('.tab').forEach(function (t) { t.hidden = t.id !== 'tab-' + name; });
+    document.dispatchEvent(new CustomEvent('tab', { detail: name }));
+  }
+  $$('.tabs button').forEach(function (b) { b.addEventListener('click', function () { showTab(b.dataset.tab); }); });
+
+  function download(name, text, type) {
+    var blob = new Blob([text], { type: type || 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+
+  window.RApp = { C: C, $: $, $$: $$, esc: esc, fmt: fmt, sgn: sgn, hoje: hoje, dataBR: dataBR, api: api, hasServer: hasServer,
+    FileSlot: FileSlot, serverPlan: serverPlan, state: state, rules: rules, showTab: showTab, download: download, pingServer: pingServer };
+  pingServer().catch(function () { /* o status já mostra "sem resposta" */ });
+})();
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var A = window.RApp, C = A.C, $ = A.$, esc = A.esc, fmt = A.fmt, sgn = A.sgn, S = A.state;
+  var DEFAULT_CCS = ['1130739002', '1230739002', '1130739004', '1230739004'];
+  var PREF = 'replanejador.ssma.v1', PROP = 'replanejador.proposta.v1';
+  var obs = '';
+
+  var slots = [null, null];
+  slots[0] = A.FileSlot($('#slot0'), {
+    title: 'Plano anterior', hint: 'O que estava planejado antes de fechar o mês (exportação do fim do ciclo passado).',
+    onChange: refresh, server: { label: 'Usar o último plano guardado no servidor', load: function () { return A.serverPlan('ciclo'); } }
+  });
+  slots[1] = A.FileSlot($('#slot1'), { title: 'Plano atual', hint: 'A nova versão, já com o realizado do mês fechado.', onChange: refresh });
+
+  /* ---------- preferências ---------- */
+  var IDS = ['prefixes', 'except', 'ignore', 'minabs'];
+  try {
+    var p = JSON.parse(localStorage.getItem(PREF) || '{}');
+    IDS.forEach(function (id) { if (p[id] !== undefined) $('#' + id).value = p[id]; });
+  } catch (e) { /* usa os padrões */ }
+  function savePrefs() {
+    try { var o = {}; IDS.forEach(function (id) { o[id] = $('#' + id).value; }); localStorage.setItem(PREF, JSON.stringify(o)); } catch (e) { /* ignora */ }
+  }
+
+  /* ---------- meses e centros de custo ---------- */
+  function fillMonths(resetDest) {
+    var closed = $('#closed'), M = C.MONTHS;
+    if (!closed.options.length) {
+      var d = new Date(), pm = (d.getMonth() + 11) % 12, idx = (pm - 3 + 12) % 12;
+      M.forEach(function (m, i) { var o = document.createElement('option'); o.value = i; o.textContent = m; closed.appendChild(o); });
+      closed.value = Math.min(idx, 10);
+    }
+    var dest = $('#dest'), c = +closed.value, prev = dest.value;
+    dest.innerHTML = '';
+    for (var i = c + 1; i < 12; i++) { var o = document.createElement('option'); o.value = i; o.textContent = M[i]; dest.appendChild(o); }
+    if (!dest.options.length) return;
+    dest.value = !resetDest && prev !== '' && +prev > c ? +prev : Math.min(c + 3, 11);
+  }
+  function timeline() {
+    var c = +$('#closed').value, d = $('#dest').value === '' ? -1 : +$('#dest').value;
+    $('#timeline').innerHTML = C.MONTHS.map(function (m, i) {
+      return '<div class="mo ' + (i < c ? 'past' : i === c ? 'closed' : i === d ? 'dest' : 'open') + '">' + m + '</div>';
+    }).join('');
+  }
+  function ccOptions() {
+    var seen = new Map();
+    slots.forEach(function (s) {
+      var f = s.get();
+      if (f) f.parsed.map.forEach(function (r) { var k = C.ccCode(r.cc); if (!seen.has(k)) seen.set(k, r.cc); });
+    });
+    return Array.from(seen.entries()).sort(function (a, b) { return a[0].localeCompare(b[0]); });
+  }
+  function buildCCList() {
+    var opts = ccOptions(), box = $('#ccList');
+    if (!opts.length) { box.innerHTML = '<p class="hint">Aparecem depois que você subir os arquivos.</p>'; return; }
+    if (!S.selected) S.selected = new Set(opts.map(function (o) { return o[0]; }).filter(function (c) { return DEFAULT_CCS.indexOf(c) >= 0; }));
+    box.innerHTML = opts.map(function (o) {
+      var u = C.unitOf(o[1]);
+      return '<label class="cc"><input type="checkbox" value="' + esc(o[0]) + '"' + (S.selected.has(o[0]) ? ' checked' : '') + '><div>' +
+        esc(C.ccName(o[1])) + (u ? ' (' + u + ')' : '') + '<br><span class="c">' + esc(o[0]) + '</span></div></label>';
+    }).join('');
+    box.querySelectorAll('input').forEach(function (cb) {
+      cb.addEventListener('change', function () { if (cb.checked) S.selected.add(cb.value); else S.selected.delete(cb.value); render(); });
+    });
+  }
+
+  /* ---------- resultado ---------- */
+  function adjHTML(it) {
+    var h = it.adj.map(function (a) {
+      return '<div class="adj"><span class="m">' + C.MONTHS[a.m] + '</span><span class="from">' + fmt(a.from) + '</span><span>→</span><span class="to">' + fmt(a.to) + '</span></div>';
+    }).join('');
+    h += '<span class="tag ' + it.type + '">' + esc(C.TYPE_TEXT[it.type]) + '</span>';
+    if (it.uncovered > 0) h += '<span class="falta">Faltam ' + fmt(it.uncovered) + ' sem cobertura</span>';
+    return h;
+  }
+  function rowHTML(it, withAdj) {
+    return '<tr><td>' + esc(it.conta.replace(/^\d+\s*/, '')) + '<span class="code">' + esc(it.code) + '</span></td>' +
+      '<td class="n">' + fmt(it.planned) + '</td><td class="n">' + fmt(it.actual) + '</td>' +
+      '<td class="n ' + (it.diff > 0 ? 'pos' : 'neg') + '">' + sgn(it.diff) + '</td>' + (withAdj ? '<td>' + adjHTML(it) + '</td>' : '') + '</tr>';
+  }
+  function tableHTML(items, withAdj) {
+    return '<div class="tablewrap"><table><thead><tr><th>Conta razão</th><th class="n">Planejado</th><th class="n">Realizado</th><th class="n">Sobra / estouro</th>' +
+      (withAdj ? '<th>Ajuste proposto</th>' : '') + '</tr></thead><tbody>' + items.map(function (it) { return rowHTML(it, withAdj); }).join('') + '</tbody></table></div>';
+  }
+  function params() {
+    var r = A.rules();
+    return Object.assign({ plan1: slots[0].get().parsed, plan2: slots[1].get().parsed, closedIdx: +$('#closed').value, destIdx: +$('#dest').value, ccs: Array.from(S.selected || []) }, r);
+  }
   function emptyHTML(msg) {
-    return '<div class="empty"><h2>' + msg + '</h2>' +
-      '<p>Como usar:</p><ol><li>Suba o plano anterior (o que estava planejado) e o plano atual (com o realizado do mês fechado).</li>' +
-      '<li>Confira o mês fechado e o mês destino.</li><li>Leia os ajustes por centro de custo e lance no SAC.</li></ol></div>';
+    return '<div class="empty"><h2>' + msg + '</h2><p>Como usar:</p><ol><li>Suba o plano anterior (ou use o último guardado no servidor) e o plano atual, com o realizado do mês fechado.</li>' +
+      '<li>Confira o mês fechado e o mês destino.</li><li>Leia os ajustes por centro de custo e lance no SAC.</li><li>Depois de lançar, confira na aba Conferir lançamento.</li></ol></div>';
+  }
+  function label(f) { return f.parsed.label || f.name; }
+
+  function ajustesRows(items) {
+    var rows = [];
+    items.forEach(function (it) {
+      var b = { cc: it.cc, conta: it.conta, planejado: it.planned, realizado: it.actual, diferenca: it.diff,
+        situacao: C.TYPE_TEXT[it.type] + (it.uncovered > 0 ? ' (faltam ' + fmt(it.uncovered) + ')' : '') };
+      if (!it.adj.length) rows.push(Object.assign({ mes: '', valor_atual: '', novo_valor: '' }, b));
+      else it.adj.forEach(function (a) { rows.push(Object.assign({ mes: C.MONTHS[a.m], valor_atual: a.from, novo_valor: a.to }, b)); });
+    });
+    return rows;
+  }
+
+  function persist(p, res) {
+    try {
+      localStorage.setItem(PROP, JSON.stringify({
+        quando: new Date().toISOString(), closedIdx: p.closedIdx, destIdx: p.destIdx, ccs: p.ccs,
+        excludedPrefixes: p.excludedPrefixes, exceptions: p.exceptions, ignore: p.ignore, minAbs: p.minAbs,
+        items: res.items, plan2: C.toRows(p.plan2), label1: p.plan1.label, label2: p.plan2.label,
+        nome1: slots[0].value.name, nome2: slots[1].value.name
+      }));
+    } catch (e) { /* proposta grande demais para o navegador: a conferência pede para recalcular */ }
   }
 
   function render() {
     var out = $('#out');
-    if (!state.f[0] || !state.f[1] || state.f[0].error || state.f[1].error) {
-      out.innerHTML = emptyHTML('Suba os dois arquivos para ver os ajustes'); state.last = null; return;
-    }
-    if (!$('#dest').options.length) { out.innerHTML = emptyHTML('Não há meses em aberto depois do mês fechado'); state.last = null; return; }
+    var f0 = slots[0].get(), f1 = slots[1].get();
+    if (!f0 || !f1) { out.innerHTML = emptyHTML('Suba os dois arquivos para ver os ajustes'); S.last = null; return; }
+    if (!$('#dest').options.length) { out.innerHTML = emptyHTML('Não há meses em aberto depois do mês fechado'); S.last = null; return; }
     var p = params();
-    if (!p.ccs.length) { out.innerHTML = emptyHTML('Marque ao menos um centro de custo'); state.last = null; return; }
-    var res = C.compute(p), S = C.summarize(res.items);
-    state.last = res;
-    var M = C.MONTHS;
+    if (!p.ccs.length) { out.innerHTML = emptyHTML('Marque ao menos um centro de custo'); S.last = null; return; }
+    var res = C.compute(p), sm = C.summarize(res.items), M = C.MONTHS;
+    S.last = { res: res, params: p, summary: sm };
+    persist(p, res);
 
     var groups = new Map();
     res.items.forEach(function (it) { var k = C.ccCode(it.cc); if (!groups.has(k)) groups.set(k, { cc: it.cc, items: [] }); groups.get(k).items.push(it); });
 
     var html = '<div class="head"><div><h2>Ajustes de ' + M[p.closedIdx] + ' para ' + M[p.destIdx] + '</h2>' +
-      '<p>Plano anterior: ' + esc(state.f[0].name) + '. Plano atual: ' + esc(state.f[1].name) + '.</p></div>' +
+      '<p>Plano anterior: ' + esc(f0.name) + '. Plano atual: ' + esc(f1.name) + '.</p></div>' +
       '<button class="dl" id="dl" type="button"' + (res.items.length ? '' : ' disabled') + '>Baixar ajustes em CSV</button></div>';
-
     html += '<div class="stats">' +
-      '<div class="stat g"><div class="v">' + fmt(S.sobra) + '</div><div class="l">Sobras a recolocar</div></div>' +
-      '<div class="stat r"><div class="v">' + fmt(S.estouro) + '</div><div class="l">Estouros do mês</div></div>' +
-      '<div class="stat ' + (S.semCobertura > 0 ? 'r' : '') + '"><div class="v">' + fmt(S.semCobertura) + '</div><div class="l">Estouros sem cobertura</div></div>' +
-      '<div class="stat"><div class="v">' + S.contas + '</div><div class="l">Contas com ajuste</div></div></div>';
+      '<div class="stat g"><div class="v">' + fmt(sm.sobra) + '</div><div class="l">Sobras a recolocar</div></div>' +
+      '<div class="stat r"><div class="v">' + fmt(sm.estouro) + '</div><div class="l">Estouros do mês</div></div>' +
+      '<div class="stat ' + (sm.semCobertura > 0 ? 'r' : '') + '"><div class="v">' + fmt(sm.semCobertura) + '</div><div class="l">Estouros sem cobertura</div></div>' +
+      '<div class="stat"><div class="v">' + sm.contas + '</div><div class="l">Contas com ajuste</div></div></div>';
+
+    html += '<div class="panel" style="margin-top:0"><h3>Guardar este ciclo no histórico</h3>' +
+      '<p class="hint">Registra a proposta no servidor. O plano que vale para o próximo ciclo só é guardado depois da conferência do lançamento.</p>' +
+      '<label class="f" for="obs">Observação do ciclo (opcional)</label><input type="text" id="obs" value="' + esc(obs) + '">' +
+      '<div class="inline"><button class="ghost" id="saveProp" type="button"' + (A.hasServer() && res.items.length ? '' : ' disabled') + '>Guardar proposta</button>' +
+      '<span class="msg" id="propMsg">' + (A.hasServer() ? '' : 'Configure o servidor no topo para guardar.') + '</span></div></div>';
 
     if (!res.items.length) html += '<p class="note">Nenhuma diferença acima do limite nos centros de custo marcados.</p>';
-
     groups.forEach(function (g) {
       var s = C.summarize(g.items), u = C.unitOf(g.cc);
       html += '<details class="ccblock" open><summary><span class="ccname">' + esc(C.ccName(g.cc)) + (u ? ' (' + u + ')' : '') + '</span>' +
-        '<span class="cccode">' + esc(C.ccCode(g.cc)) + '</span>' +
-        '<span class="ccsum">Sobra <b class="g">' + fmt(s.sobra) + '</b>, estouro <b class="r">' + fmt(s.estouro) + '</b></span></summary>' +
+        '<span class="cccode">' + esc(C.ccCode(g.cc)) + '</span><span class="ccsum">Sobra <b class="g">' + fmt(s.sobra) + '</b>, estouro <b class="r">' + fmt(s.estouro) + '</b></span></summary>' +
         tableHTML(g.items, true) + '</details>';
     });
-
     if (res.ignored.length) {
-      html += '<details class="minor"><summary>Contas que você trata à parte (' + res.ignored.length + ')</summary>' +
-        '<p class="hint" style="margin-top:8px">Não entram nos ajustes. Estão aqui para você conferir.</p>';
+      html += '<details class="minor"><summary>Contas que você trata à parte (' + res.ignored.length + ')</summary><p class="hint" style="margin-top:8px">Não entram nos ajustes. Estão aqui para você conferir.</p>';
       var byCC = new Map();
-      res.ignored.forEach(function (it) { var k = it.cc; if (!byCC.has(k)) byCC.set(k, []); byCC.get(k).push(it); });
+      res.ignored.forEach(function (it) { if (!byCC.has(it.cc)) byCC.set(it.cc, []); byCC.get(it.cc).push(it); });
       byCC.forEach(function (items, cc) {
         var u = C.unitOf(cc);
         html += '<h3 style="margin:14px 0 4px;font-size:.9rem;color:var(--ink)">' + esc(C.ccName(cc)) + (u ? ' (' + u + ')' : '') + '</h3>' + tableHTML(items, false);
@@ -625,49 +867,439 @@
     }
     html += '<p class="note">' + res.outOfScope + ' linhas de folha e depreciação ficaram fora da análise pelas regras ao lado.</p>';
     out.innerHTML = html;
-    var dl = $('#dl');
-    if (dl) dl.addEventListener('click', download);
-  }
 
-  function download() {
-    if (!state.last || !state.last.items.length) return;
-    var blob = new Blob([C.toCSV(state.last.items)], { type: 'text/csv;charset=utf-8' });
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'ajustes_' + C.MONTHS[+$('#closed').value] + '_para_' + C.MONTHS[+$('#dest').value] + '.csv';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
-  }
-
-  function refresh() {
-    slotUI(0); slotUI(1);
-    buildCCList();
-    fillMonths(); timeline();
-    render();
-  }
-
-  // ---------- eventos ----------
-  [0, 1].forEach(function (i) {
-    var slot = $('#slot' + i), inp = $('#file' + i);
-    inp.addEventListener('change', function () { onFile(i, inp.files[0]); inp.value = ''; });
-    slot.addEventListener('dragover', function (e) { e.preventDefault(); slot.classList.add('over'); });
-    slot.addEventListener('dragleave', function () { slot.classList.remove('over'); });
-    slot.addEventListener('drop', function (e) {
-      e.preventDefault(); slot.classList.remove('over');
-      if (e.dataTransfer.files[0]) onFile(i, e.dataTransfer.files[0]);
+    $('#dl').addEventListener('click', function () {
+      A.download('ajustes_' + M[p.closedIdx] + '_para_' + M[p.destIdx] + '.csv', C.toCSV(res.items));
     });
-  });
+    $('#obs').addEventListener('input', function (e) { obs = e.target.value; });
+    $('#saveProp').addEventListener('click', function () {
+      var btn = $('#saveProp'), msg = $('#propMsg');
+      btn.disabled = true; msg.className = 'msg'; msg.textContent = 'Guardando...';
+      A.api('saveCycle', {
+        ciclo: { mes_fechado: M[p.closedIdx], mes_destino: M[p.destIdx], plano_anterior: label(f0), plano_atual: label(f1), observacao: obs,
+          resumo: { sobra: sm.sobra, estouro: sm.estouro, semCobertura: sm.semCobertura } },
+        ajustes: ajustesRows(res.items)
+      }).then(function (j) {
+        S.cycleId = j.ciclo_id;
+        try { var q = JSON.parse(localStorage.getItem(PROP)); q.cycleId = j.ciclo_id; localStorage.setItem(PROP, JSON.stringify(q)); } catch (e) { /* ignora */ }
+        msg.className = 'msg ok'; msg.textContent = 'Proposta guardada (' + j.ciclo_id + '). Depois de lançar no SAC, use a aba Conferir lançamento.';
+      }).catch(function (e) { btn.disabled = false; msg.className = 'msg bad'; msg.textContent = e.message; });
+    });
+  }
+
+  function refresh() { buildCCList(); fillMonths(false); timeline(); render(); }
+
   $('#closed').addEventListener('change', function () { fillMonths(true); timeline(); render(); });
   $('#dest').addEventListener('change', function () { timeline(); render(); });
-  ['prefixes', 'except', 'ignore', 'minabs'].forEach(function (id) {
-    $('#' + id).addEventListener('change', function () { savePrefs(); render(); });
-  });
+  IDS.forEach(function (id) { $('#' + id).addEventListener('change', function () { savePrefs(); render(); }); });
+  document.addEventListener('srvchange', function () { if (S.last) render(); });
 
-  loadPrefs();
-  fillMonths(); timeline(); render();
-  window.__replanejador = { state: state, onFile: onFile, refresh: refresh };
+  fillMonths(false); timeline(); render();
+  A.slots = slots;
 })();
 
+</script>
+<script>
+(function () {
+  'use strict';
+  var A = window.RApp, C = A.C, $ = A.$, esc = A.esc, fmt = A.fmt, S = A.state;
+  var PROP = 'replanejador.proposta.v1';
+  var root = $('#conferir');
+  root.innerHTML =
+    '<h2 class="t" style="font-size:1.25rem">Conferir o que foi lançado no SAC</h2>' +
+    '<p class="hint" style="max-width:70ch">Depois de lançar os ajustes, exporte o planejamento de novo e suba aqui. O app compara com a proposta da aba Replanejar. Estando certo, você guarda esse plano para ser o plano anterior do próximo ciclo.</p>' +
+    '<div class="grid2" style="margin-top:14px"><div id="cfSlot"></div><div id="cfProp"></div></div><div id="cfOut"></div>';
+
+  var tol = 1, tolBox = null;
+  var slot = A.FileSlot($('#cfSlot'), { title: 'Plano lançado', hint: 'Exportação do planejamento feita depois de lançar os ajustes no SAC.', onChange: run });
+
+  function proposal() {
+    if (S.last) {
+      var p = S.last.params;
+      return { items: S.last.res.items, plan2: p.plan2, closedIdx: p.closedIdx, destIdx: p.destIdx, ccs: p.ccs, excludedPrefixes: p.excludedPrefixes,
+        exceptions: p.exceptions, ignore: p.ignore, quando: new Date().toISOString(), cycleId: S.cycleId };
+    }
+    try {
+      var q = JSON.parse(localStorage.getItem(PROP) || 'null');
+      if (!q) return null;
+      q.plan2 = C.fromRows(q.plan2, q.label2);
+      return q;
+    } catch (e) { return null; }
+  }
+
+  function paintProp() {
+    var q = proposal(), box = $('#cfProp');
+    if (!q) { box.innerHTML = '<div class="panel" style="margin-top:0"><h3>Proposta do ciclo</h3><p class="hint">Ainda não há proposta. Calcule os ajustes na aba Replanejar primeiro.</p></div>'; return; }
+    var n = 0; q.items.forEach(function (i) { n += i.adj.length; });
+    box.innerHTML = '<div class="panel" style="margin-top:0"><h3>Proposta do ciclo</h3><p class="hint">Fechamento de ' + C.MONTHS[q.closedIdx] + ', destino ' + C.MONTHS[q.destIdx] +
+      '. ' + n + ' lançamentos em ' + q.items.length + ' contas, calculada em ' + A.dataBR(q.quando) + '.' + (q.cycleId ? ' Guardada no histórico.' : '') + '</p>' +
+      '<label class="f" for="cfTol">Tolerância na comparação (R$)</label><input type="number" id="cfTol" min="0" step="0.5" value="' + tol + '" style="max-width:140px">' +
+      '<p class="hint" style="margin-top:6px">Valores lançados com diferença até esse limite contam como certos (ex.: 4.834 no lugar de 4.834,34).</p></div>';
+    $('#cfTol').addEventListener('change', function (e) { tol = Math.max(0, parseFloat(e.target.value) || 0); run(); });
+  }
+
+  function mRow(r, extra) {
+    return '<tr><td>' + esc(r.conta.replace(/^\d+\s*/, '')) + '<span class="code">' + esc(C.ccName(r.cc)) + ' (' + C.unitOf(r.cc) + ')</span></td>' +
+      '<td>' + C.MONTHS[r.m] + '</td><td class="n">' + extra[0] + '</td><td class="n">' + extra[1] + '</td><td class="n">' + extra[2] + '</td></tr>';
+  }
+  function table(title, hint, head, rows) {
+    if (!rows.length) return '';
+    return '<div class="panel"><h3>' + title + ' (' + rows.length + ')</h3><p class="hint">' + hint + '</p><div class="tablewrap"><table><thead><tr><th>Conta</th><th>Mês</th>' +
+      head.map(function (h) { return '<th class="n">' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div></div>';
+  }
+
+  function run() {
+    paintProp();
+    var out = $('#cfOut'), f = slot.get(), q = proposal();
+    if (!f || !q) { out.innerHTML = ''; return; }
+    var r = C.conferir({ items: q.items, plan2: q.plan2, launched: f.parsed, closedIdx: q.closedIdx, tol: tol, ccs: q.ccs,
+      excludedPrefixes: q.excludedPrefixes, exceptions: q.exceptions, ignore: q.ignore });
+    var total = r.ok.length + r.naoLancado.length + r.diferente.length + r.ausentes.length;
+    var div = r.naoLancado.length + r.diferente.length + r.ausentes.length;
+    var foraProp = r.fora.filter(function (x) { return !x.aParte; });
+
+    var html = '<div class="stats"><div class="stat g"><div class="v">' + r.ok.length + ' de ' + total + '</div><div class="l">Lançamentos conferidos</div></div>' +
+      '<div class="stat ' + (r.naoLancado.length ? 'r' : '') + '"><div class="v">' + r.naoLancado.length + '</div><div class="l">Ainda não lançados</div></div>' +
+      '<div class="stat ' + (r.diferente.length + r.ausentes.length ? 'r' : '') + '"><div class="v">' + (r.diferente.length + r.ausentes.length) + '</div><div class="l">Com valor diferente</div></div>' +
+      '<div class="stat"><div class="v">' + r.fora.length + '</div><div class="l">Alterações fora da proposta</div></div></div>';
+
+    html += table('Ainda não lançados', 'O valor no arquivo ainda é o de antes do ajuste.', ['Era', 'Esperado', 'Lançado'],
+      r.naoLancado.map(function (x) { return mRow(x, [fmt(x.from), fmt(x.to), fmt(x.lancado)]); }));
+    html += table('Valor diferente do proposto', 'Foi lançado outro valor. Se foi decisão sua, tudo bem; senão, corrija no SAC.', ['Era', 'Esperado', 'Lançado'],
+      r.diferente.map(function (x) { return mRow(x, [fmt(x.from), fmt(x.to), fmt(x.lancado)]); }));
+    html += table('Conta não encontrada no arquivo', 'A conta da proposta não aparece no plano lançado.', ['Era', 'Esperado', 'Lançado'],
+      r.ausentes.map(function (x) { return mRow(x, [fmt(x.from), fmt(x.to), '—']); }));
+    html += table('Alterações fora da proposta', 'Meses em aberto que mudaram sem estar na proposta. As marcadas como "à parte" são contas que você trata separado (ex.: contrato do SESI).', ['Plano atual', 'Lançado', ''],
+      r.fora.map(function (x) { return mRow(x, [fmt(x.from), fmt(x.lancado), x.aParte ? '<span class="tag warn">à parte</span>' : '']); }));
+    if (!div && !foraProp.length) html += '<p class="note" style="color:var(--green);font-weight:600">Tudo conferido: o plano lançado bate com a proposta.</p>';
+
+    var rotulo = 'Ciclo ' + C.MONTHS[q.closedIdx] + ' (' + A.hoje() + ')';
+    html += '<div class="panel"><h3>Guardar como plano do próximo ciclo</h3><p class="hint">Guarda no servidor o plano que está no arquivo lançado, com todos os centros de custo. É ele que o app vai oferecer como plano anterior no próximo ciclo.' +
+      (div + foraProp.length ? ' Há ' + (div + foraProp.length) + ' pontos acima. Se são decisões suas, pode guardar mesmo assim: vale o que está no arquivo.' : '') + '</p>' +
+      '<label class="f" for="cfRot">Nome deste plano</label><input type="text" id="cfRot" value="' + esc(rotulo) + '">' +
+      '<div class="inline"><button class="dl" id="cfOk" type="button"' + (A.hasServer() ? '' : ' disabled') + '>Confirmar e guardar</button><span class="msg" id="cfMsg">' + (A.hasServer() ? '' : 'Configure o servidor no topo para guardar.') + '</span></div></div>';
+    out.innerHTML = html;
+
+    var btn = $('#cfOk');
+    btn.addEventListener('click', function () {
+      var msg = $('#cfMsg');
+      btn.disabled = true; msg.className = 'msg'; msg.textContent = 'Guardando...';
+      A.api('confirmCycle', { ciclo_id: q.cycleId || '', rotulo: $('#cfRot').value.trim() || rotulo, rows: C.toRows(f.parsed), divergencias: div + foraProp.length })
+        .then(function () {
+          msg.className = 'msg ok';
+          msg.textContent = 'Guardado. No próximo ciclo, use "Usar o último plano guardado no servidor" como plano anterior.';
+        }).catch(function (e) { btn.disabled = false; msg.className = 'msg bad'; msg.textContent = e.message; });
+    });
+  }
+
+  document.addEventListener('tab', function (e) { if (e.detail === 'conferir') run(); });
+  document.addEventListener('srvchange', function () { if (!root.closest('.tab').hidden) run(); });
+  paintProp();
+})();
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var A = window.RApp, C = A.C, $ = A.$, esc = A.esc, fmt = A.fmt, sgn = A.sgn, S = A.state;
+  var JUST = 'replanejador.just.v1';
+  var DEFAULT_CCS = ['1130739002', '1230739002', '1130739004', '1230739004'];
+  var opts = { titulo: 'ORÇAMENTO 26/27', n: 10, folha: true };
+  var evo = null;
+
+  var root = $('#gestao');
+  root.innerHTML =
+    '<h2 class="t" style="font-size:1.25rem">Gestão: orçamento da safra contra a base oficial</h2>' +
+    '<p class="hint" style="max-width:72ch">Mostra se o orçamento está abaixo ou acima da base oficial, centro de custo por centro de custo, e gera a apresentação para a gestão. As justificativas que você escrever ficam salvas neste navegador e voltam no próximo ciclo.</p>' +
+    '<div class="grid2" style="margin-top:14px"><div id="gBase"></div><div id="gAtual"></div></div><div id="gOut"></div>';
+
+  var base = A.FileSlot($('#gBase'), {
+    title: 'Base oficial', hint: 'A versão de referência da gestão (ex.: Sf2026-27_v8). Num comparativo, a coluna VERSÃO 01.', defaultVersion: 1,
+    onChange: render, server: { label: 'Usar a base guardada no servidor', load: function () { return A.serverPlan('base'); } }
+  });
+  var atual = A.FileSlot($('#gAtual'), {
+    title: 'Situação atual', hint: 'O plano vigente. Num comparativo, a coluna VERSÃO 02.', defaultVersion: 2,
+    onChange: render, server: { label: 'Usar o último plano guardado no servidor', load: function () { return A.serverPlan('ciclo'); } }
+  });
+
+  /* ---------- dados ---------- */
+  function ccDentro(code) { return (S.selected ? S.selected.has(code) : DEFAULT_CCS.indexOf(code) >= 0); }
+  function contaDentro(code) {
+    var r = A.rules();
+    return r.exceptions.indexOf(code) >= 0 || !r.excludedPrefixes.some(function (x) { return code.indexOf(x) === 0; });
+  }
+  function getJust() { try { return JSON.parse(localStorage.getItem(JUST) || '{}'); } catch (e) { return {}; } }
+  function setJust(k, v) { try { var j = getJust(); if (v) j[k] = v; else delete j[k]; localStorage.setItem(JUST, JSON.stringify(j)); } catch (e) { /* ignora */ } }
+
+  function model() {
+    var fb = base.get(), fa = atual.get();
+    if (!fb || !fa) return null;
+    var tb = C.totalsByCC(fb.parsed), ta = C.totalsByCC(fa.parsed), codes = new Set();
+    tb.forEach(function (_, k) { codes.add(k); }); ta.forEach(function (_, k) { codes.add(k); });
+    var rows = [], tot = { base: 0, atual: 0 };
+    Array.from(codes).sort().forEach(function (k) {
+      var b = tb.get(k), a = ta.get(k), ref = (a || b).cc;
+      var vb = b ? b.total : 0, va = a ? a.total : 0;
+      rows.push({ code: k, cc: ref, base: vb, atual: va, diff: C.r2(va - vb), pct: vb ? (va - vb) / vb * 100 : null, fora: !ccDentro(k) });
+      tot.base += b ? b.raw : 0; tot.atual += a ? a.raw : 0;
+    });
+    tot.base = C.r2(tot.base); tot.atual = C.r2(tot.atual); tot.diff = C.r2(tot.atual - tot.base); tot.pct = tot.base ? tot.diff / tot.base * 100 : null;
+    var J = getJust();
+    var movs = C.movements(fb.parsed, fa.parsed).filter(function (m) { return Math.abs(m.diff) >= 1 && (opts.folha || contaDentro(m.code)); })
+      .sort(function (x, y) { return Math.abs(y.diff) - Math.abs(x.diff); }).slice(0, opts.n)
+      .map(function (m) { m.key = C.ccCode(m.cc) + '|' + m.code; m.folha = !contaDentro(m.code); m.just = J[m.key] || ''; return m; });
+    return { labelBase: fb.parsed.label || fb.name, labelAtual: fa.parsed.label || fa.name, rows: rows, tot: tot, movs: movs };
+  }
+
+  /* ---------- tela ---------- */
+  function situ(d) { return d < -0.005 ? ['abaixo da base', 'pos'] : d > 0.005 ? ['acima da base', 'neg'] : ['igual à base', '']; }
+
+  function barsHTML(rows) {
+    var max = Math.max.apply(null, rows.map(function (r) { return Math.max(r.base, r.atual, 1); }));
+    var h = '<div class="bars">' + rows.map(function (r) {
+      var u = C.unitOf(r.cc), s = situ(r.diff);
+      return '<div class="barrow"><div class="nm">' + esc(C.ccName(r.cc)) + (u ? ' (' + u + ')' : '') + '<span>' + esc(r.code) + (r.fora ? ', fora do escopo da SSMA' : '') + '</span></div>' +
+        '<div><div class="bar base" style="width:' + (r.base / max * 100).toFixed(1) + '%"></div><div class="bar atual" style="width:' + (r.atual / max * 100).toFixed(1) + '%"></div></div>' +
+        '<div class="vals"><b class="' + s[1] + '">' + sgn(r.diff) + '</b>' + fmt(r.base) + ' para ' + fmt(r.atual) + '</div></div>';
+    }).join('') + '</div><div class="keys"><span><i style="background:var(--green)"></i>Base oficial</span><span><i style="background:var(--gold)"></i>Situação atual</span></div>';
+    return h;
+  }
+
+  function evoHTML() {
+    if (!evo || !evo.length) return '';
+    var max = Math.max.apply(null, evo.map(function (e) { return e.total; }));
+    return '<div class="panel"><h3>Evolução por ciclo</h3><p class="hint">Total da safra em cada plano guardado no servidor.</p><div class="bars">' + evo.map(function (e) {
+      return '<div class="barrow"><div class="nm">' + esc(e.rotulo || e.tipo) + '<span>' + (e.tipo === 'base' ? 'base oficial' : 'plano confirmado') + ', ' + esc(A.dataBR(e.criado_em)) + '</span></div>' +
+        '<div><div class="bar ' + (e.tipo === 'base' ? 'base' : 'atual') + '" style="width:' + (e.total / max * 100).toFixed(1) + '%"></div></div><div class="vals"><b>' + fmt(e.total) + '</b></div></div>';
+    }).join('') + '</div></div>';
+  }
+
+  function render() {
+    var out = $('#gOut'), m = model();
+    if (!m) { out.innerHTML = '<p class="note">Suba a base oficial e a situação atual para ver o painel.</p>'; return; }
+    var s = situ(m.tot.diff);
+    var html = '<div class="stats three"><div class="stat"><div class="v">' + fmt(m.tot.base) + '</div><div class="l">Base oficial (' + esc(m.labelBase) + ')</div></div>' +
+      '<div class="stat"><div class="v">' + fmt(m.tot.atual) + '</div><div class="l">Situação atual (' + esc(m.labelAtual) + ')</div></div>' +
+      '<div class="stat ' + (s[1] === 'pos' ? 'g' : s[1] === 'neg' ? 'r' : '') + '"><div class="v">' + sgn(m.tot.diff) + '</div><div class="l">' +
+      (m.tot.pct === null ? '' : sgn(C.r2(m.tot.pct)).replace(/^([+-]?)/, '$1') + '%, ') + s[0] + '</div></div></div>';
+
+    html += '<div class="panel" style="margin-top:0"><h3>Por centro de custo</h3>' + barsHTML(m.rows) + '</div>';
+
+    html += '<div class="panel"><h3>Maiores movimentos e justificativas</h3><p class="hint">Escreva o motivo de cada movimento. O texto vai para a apresentação e fica guardado para os próximos ciclos.</p>' +
+      '<div class="inline"><label for="gN" style="font-size:.85rem;font-weight:600">Quantidade</label><select id="gN" style="width:auto">' +
+      [6, 8, 10, 12, 15].map(function (n) { return '<option' + (n === opts.n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select>' +
+      '<label style="font-size:.85rem"><input type="checkbox" id="gFolha"' + (opts.folha ? ' checked' : '') + '> Incluir folha e depreciação (marcadas com asterisco)</label></div>' +
+      '<div class="tablewrap" style="margin-top:8px"><table><thead><tr><th>Conta razão</th><th>Centro de custo</th><th class="n">Base</th><th class="n">Atual</th><th class="n">Variação</th><th>Justificativa</th></tr></thead><tbody>' +
+      m.movs.map(function (x, i) {
+        var u = C.unitOf(x.cc);
+        return '<tr><td>' + esc(x.conta.replace(/^\d+\s*/, '')) + (x.folha ? ' *' : '') + '<span class="code">' + esc(x.code) + '</span></td><td>' + esc(C.ccName(x.cc)) + (u ? ' (' + u + ')' : '') + '</td>' +
+          '<td class="n">' + fmt(x.base) + '</td><td class="n">' + fmt(x.atual) + '</td><td class="n ' + (x.diff < 0 ? 'pos' : 'neg') + '">' + sgn(x.diff) + '</td>' +
+          '<td><input type="text" class="just" data-i="' + i + '" value="' + esc(x.just) + '" placeholder="Motivo da variação"></td></tr>';
+      }).join('') + '</tbody></table></div></div>';
+
+    html += evoHTML();
+
+    html += '<div class="panel"><h3>Apresentação para a gestão</h3><div class="inline"><label for="gTit" style="font-size:.85rem;font-weight:600">Título</label>' +
+      '<input type="text" id="gTit" value="' + esc(opts.titulo) + '"><button class="dl" id="gPptx" type="button">Baixar apresentação (PPTX)</button></div>' +
+      '<div class="inline">' + (A.hasServer() ? '<button class="ghost" id="gEvo" type="button">Carregar evolução por ciclo</button>' : '') +
+      (A.hasServer() && base.get() && base.get().fmt !== 'srv' ? '<button class="ghost" id="gSaveBase" type="button">Guardar esta base no servidor</button>' : '') +
+      '<span class="msg" id="gMsg"></span></div></div>' +
+      '<p class="note">* Folha (RH) e depreciação (Contábil) aparecem para contexto, mas não são replanejadas pela SSMA.</p>';
+    out.innerHTML = html;
+
+    $('#gN').addEventListener('change', function (e) { opts.n = +e.target.value; render(); });
+    $('#gFolha').addEventListener('change', function (e) { opts.folha = e.target.checked; render(); });
+    $('#gTit').addEventListener('input', function (e) { opts.titulo = e.target.value; });
+    out.querySelectorAll('input.just').forEach(function (inp) {
+      inp.addEventListener('input', function () { var x = m.movs[+inp.dataset.i]; x.just = inp.value; setJust(x.key, inp.value.trim()); });
+    });
+    $('#gPptx').addEventListener('click', function () {
+      var mm = model(), msg = $('#gMsg');
+      try { buildDeck(mm); msg.className = 'msg ok'; msg.textContent = 'Apresentação gerada.'; }
+      catch (e) { msg.className = 'msg bad'; msg.textContent = e.message; }
+    });
+    var eb = $('#gEvo');
+    if (eb) eb.addEventListener('click', function () {
+      var msg = $('#gMsg'); msg.className = 'msg'; msg.textContent = 'Buscando...';
+      A.api('totals').then(function (j) {
+        evo = j.snaps.map(function (sn) {
+          var t = 0; Object.keys(sn.porCC).forEach(function (k) { t += sn.porCC[k]; });
+          return { rotulo: sn.rotulo, tipo: sn.tipo, criado_em: sn.criado_em, total: C.r2(t) };
+        }).sort(function (a, b) { return (a.tipo === 'base' ? 0 : 1) - (b.tipo === 'base' ? 0 : 1) || String(a.criado_em).localeCompare(String(b.criado_em)); });
+        render();
+      }).catch(function (e) { msg.className = 'msg bad'; msg.textContent = e.message; });
+    });
+    var sb = $('#gSaveBase');
+    if (sb) sb.addEventListener('click', function () {
+      var msg = $('#gMsg'), f = base.get(); sb.disabled = true; msg.className = 'msg'; msg.textContent = 'Guardando...';
+      A.api('saveBase', { rotulo: f.parsed.label || f.name, rows: C.toRows(f.parsed) })
+        .then(function () { msg.className = 'msg ok'; msg.textContent = 'Base guardada no servidor.'; })
+        .catch(function (e) { sb.disabled = false; msg.className = 'msg bad'; msg.textContent = e.message; });
+    });
+  }
+
+  /* ---------- apresentação ---------- */
+  var P = { green: '07583C', lime: 'B3DD64', gold: 'FCB952', red: 'DF4636', ink: '1A2E1A', gray: '5A7A5A', card: 'F0F9F0', line: 'D5E5D5' };
+  var FONT = 'Open Sans';
+  function curto(cc) {
+    var u = C.unitOf(cc), n = C.ccName(cc).replace('Segurança do Trabalho', 'Seg. Trab.').replace('Meio Ambiente', 'Meio Amb.')
+      .replace('Gerência de SSMA', 'Gerência SSMA').replace('Programas Corporativos', 'Prog. Corp.');
+    return n + (u ? '\n(' + u + ')' : '');
+  }
+  function brl(n) { return 'R$ ' + fmt(n); }
+
+  function buildDeck(m) {
+    if (typeof PptxGenJS === 'undefined') throw new Error('A biblioteca de apresentações não carregou. Abra a página com internet.');
+    var pres = new PptxGenJS(); pres.layout = 'LAYOUT_WIDE';
+    var titulo = (opts.titulo || 'ORÇAMENTO 26/27').trim();
+    var s = situ(m.tot.diff), neg = m.tot.diff > 0;
+    var nPag = 1;
+    function rodape(sl) {
+      nPag++;
+      sl.addText('Replanejamento SSMA, ' + A.hoje(), { x: 0.5, y: 7.1, w: 8, h: 0.3, fontFace: FONT, fontSize: 9, color: P.gray });
+      sl.addText(String(nPag), { x: 12.6, y: 7.1, w: 0.5, h: 0.3, fontFace: FONT, fontSize: 9, color: P.gray, align: 'right' });
+    }
+
+    // capa
+    var c = pres.addSlide(); c.background = { color: P.green };
+    c.addText(titulo, { x: 0.9, y: 2.5, w: 11.5, h: 1.1, fontFace: FONT, fontSize: 38, color: 'FFFFFF', bold: true });
+    c.addText('SSMA, base oficial contra situação atual', { x: 0.9, y: 3.65, w: 11.5, h: 0.5, fontFace: FONT, fontSize: 16, color: P.gold });
+    c.addShape('line', { x: 0.9, y: 4.3, w: 3.2, h: 0, line: { color: P.gold, width: 2 } });
+    c.addText('Base: ' + m.labelBase + '   Atual: ' + m.labelAtual + '   ' + A.hoje(), { x: 0.9, y: 4.5, w: 11.5, h: 0.4, fontFace: FONT, fontSize: 12, color: 'D8ECDD' });
+
+    // resumo
+    var r = pres.addSlide(); r.background = { color: 'FFFFFF' };
+    r.addText(titulo, { x: 0.6, y: 0.35, w: 10, h: 0.6, fontFace: FONT, fontSize: 28, color: P.green, bold: true });
+    r.addText('Orçamento consolidado de SSMA (' + m.rows.length + ' centros de custo), base ' + m.labelBase, { x: 0.6, y: 0.95, w: 12, h: 0.35, fontFace: FONT, fontSize: 12.5, color: P.gray });
+    var cards = [['BASE OFICIAL', brl(m.tot.base), P.green, ''], ['SITUAÇÃO ATUAL', brl(m.tot.atual), P.green, ''],
+      ['VARIAÇÃO', (m.tot.diff > 0 ? '+' : '-') + brl(Math.abs(m.tot.diff)), neg ? P.red : P.green, (m.tot.pct === null ? '' : sgn(C.r2(m.tot.pct)) + '%, ') + s[0]]];
+    cards.forEach(function (cd, i) {
+      var x = 0.6 + i * 4.1;
+      r.addShape('roundRect', { x: x, y: 1.55, w: 3.75, h: 1.5, rectRadius: 0.08, fill: { color: P.card }, line: { type: 'none' } });
+      r.addText(cd[0], { x: x + 0.25, y: 1.72, w: 3.3, h: 0.35, fontFace: FONT, fontSize: 11, color: P.gray, bold: true, charSpacing: 1 });
+      r.addText(cd[1], { x: x + 0.25, y: 2.05, w: 3.3, h: 0.6, fontFace: FONT, fontSize: 20, color: cd[2], bold: true });
+      if (cd[3]) r.addText(cd[3], { x: x + 0.25, y: 2.6, w: 3.3, h: 0.35, fontFace: FONT, fontSize: 11, color: P.gray });
+    });
+    r.addText('O orçamento está ' + brl(Math.abs(m.tot.diff)) + ' ' + s[0] + ' no consolidado.', { x: 0.6, y: 3.25, w: 12, h: 0.45, fontFace: FONT, fontSize: 14, color: P.ink, italic: true });
+    var labels = m.rows.map(function (x) { return curto(x.cc); });
+    r.addChart(pres.ChartType.bar, [
+      { name: 'Base oficial', labels: labels, values: m.rows.map(function (x) { return x.base; }) },
+      { name: 'Situação atual', labels: labels, values: m.rows.map(function (x) { return x.atual; }) }],
+    { x: 0.6, y: 3.8, w: 12.1, h: 3.25, barDir: 'col', barGapWidthPct: 35, valAxisMinVal: 0, showLegend: true, legendPos: 'b', legendFontSize: 11, legendFontFace: FONT, legendColor: P.ink,
+      showValue: true, dataLabelPosition: 'outEnd', dataLabelFontSize: 9, dataLabelFontFace: FONT, dataLabelColor: P.ink, dataLabelFormatCode: '#,##0',
+      chartColors: [P.green, P.gold], catAxisLabelColor: P.ink, catAxisLabelFontSize: 10, catAxisLabelFontFace: FONT,
+      valAxisLabelColor: P.gray, valAxisLabelFontSize: 9, valAxisLabelFontFace: FONT, valAxisLabelFormatCode: '#,##0,,"M"', valGridLine: { color: 'E5E1D6', size: 1 }, catGridLine: { style: 'none' } });
+    rodape(r);
+
+    // tabela por centro de custo
+    var t = pres.addSlide(); t.background = { color: 'FFFFFF' };
+    t.addText('Abaixo ou acima da base, por centro de custo', { x: 0.6, y: 0.35, w: 12, h: 0.6, fontFace: FONT, fontSize: 24, color: P.green, bold: true });
+    var head = ['Centro de custo', 'Base oficial', 'Situação atual', 'Variação R$', 'Var. %', 'Situação'];
+    var tb = [head.map(function (h, i) { return { text: h, options: { bold: true, color: 'FFFFFF', fill: { color: P.green }, align: i === 0 ? 'left' : i === 5 ? 'center' : 'right', fontFace: FONT, fontSize: 11 } }; })];
+    m.rows.forEach(function (x, i) {
+      var st = x.fora ? ['fora do escopo', P.gray] : x.diff < -0.005 ? ['Abaixo da base', P.green] : x.diff > 0.005 ? ['Acima da base', P.red] : ['Igual à base', P.gray];
+      var fill = { color: i % 2 ? 'FFFFFF' : P.card }, u = C.unitOf(x.cc);
+      var cell = function (txt, al, col, b) { return { text: txt, options: { align: al, fontFace: FONT, fontSize: 10.5, color: col || P.ink, fill: fill, bold: !!b } }; };
+      tb.push([cell(C.ccName(x.cc) + (u ? ' (' + u + ')' : '') + (x.fora ? ' *' : ''), 'left'), cell(fmt(x.base), 'right'), cell(fmt(x.atual), 'right'),
+        cell(sgn(x.diff), 'right'), cell(x.pct === null ? '—' : sgn(C.r2(x.pct)) + '%', 'right'), cell(st[0], 'center', st[1], true)]);
+    });
+    var tc = function (txt, al) { return { text: txt, options: { align: al, bold: true, fontFace: FONT, fontSize: 11, color: P.ink, fill: { color: P.gold } } }; };
+    tb.push([tc('TOTAL CONSOLIDADO', 'left'), tc(fmt(m.tot.base), 'right'), tc(fmt(m.tot.atual), 'right'), tc(sgn(m.tot.diff), 'right'), tc(m.tot.pct === null ? '—' : sgn(C.r2(m.tot.pct)) + '%', 'right'), tc(s[0].charAt(0).toUpperCase() + s[0].slice(1), 'center')]);
+    t.addTable(tb, { x: 0.6, y: 1.3, w: 12.1, colW: [3.9, 1.9, 1.9, 1.7, 1.1, 1.6], rowH: 0.46, border: { type: 'solid', color: P.line, pt: 0.5 } });
+    if (m.rows.some(function (x) { return x.fora; }))
+      t.addText('* Centros fora do escopo da SSMA (folha ou depreciação): aparecem para contexto e não são replanejados pela área.', { x: 0.6, y: 6.55, w: 12, h: 0.35, fontFace: FONT, fontSize: 10, color: P.gray, italic: true });
+    rodape(t);
+
+    // maiores movimentos
+    var PER = 5;
+    for (var i = 0; i < m.movs.length; i += PER) {
+      var sl = pres.addSlide(); sl.background = { color: 'FFFFFF' };
+      sl.addText('Maiores movimentos e justificativas' + (m.movs.length > PER ? ' (' + (Math.floor(i / PER) + 1) + ' de ' + Math.ceil(m.movs.length / PER) + ')' : ''), { x: 0.6, y: 0.35, w: 12, h: 0.6, fontFace: FONT, fontSize: 24, color: P.green, bold: true });
+      var hd = ['Conta razão', 'Centro de custo', 'Variação R$', 'Justificativa'];
+      var rowsT = [hd.map(function (h, k) { return { text: h, options: { bold: true, color: 'FFFFFF', fill: { color: P.green }, align: k === 2 ? 'right' : 'left', fontFace: FONT, fontSize: 11 } }; })];
+      m.movs.slice(i, i + PER).forEach(function (x, k) {
+        var fill = { color: k % 2 ? 'FFFFFF' : P.card }, u = C.unitOf(x.cc);
+        var o = function (al, col, b, it) { return { align: al, fontFace: FONT, fontSize: 10, color: col || P.ink, fill: fill, bold: !!b, italic: !!it, valign: 'top' }; };
+        rowsT.push([
+          { text: x.conta.replace(/^\d+\s*/, '') + (x.folha ? ' *' : '') + '\n' + x.code, options: o('left') },
+          { text: C.ccName(x.cc) + (u ? ' (' + u + ')' : ''), options: o('left') },
+          { text: sgn(x.diff), options: o('right', x.diff < 0 ? P.green : P.red, true) },
+          { text: x.just || '(sem justificativa)', options: o('left', x.just ? P.ink : P.gray, false, !x.just) }]);
+      });
+      sl.addTable(rowsT, { x: 0.6, y: 1.25, w: 12.1, colW: [3.2, 2.3, 1.5, 5.1], rowH: [0.4, 1.0, 1.0, 1.0, 1.0, 1.0], border: { type: 'solid', color: P.line, pt: 0.5 } });
+      if (m.movs.some(function (x) { return x.folha; })) sl.addText('* Conta de folha ou depreciação: tratada pelo RH ou pela Contábil.', { x: 0.6, y: 6.7, w: 12, h: 0.3, fontFace: FONT, fontSize: 10, color: P.gray, italic: true });
+      rodape(sl);
+    }
+
+    // evolução
+    if (evo && evo.length) {
+      var ev = pres.addSlide(); ev.background = { color: 'FFFFFF' };
+      ev.addText('Evolução do orçamento por ciclo', { x: 0.6, y: 0.35, w: 12, h: 0.6, fontFace: FONT, fontSize: 24, color: P.green, bold: true });
+      ev.addChart(pres.ChartType.bar, [{ name: 'Total da safra', labels: evo.map(function (e) { return e.rotulo || e.tipo; }), values: evo.map(function (e) { return e.total; }) }],
+        { x: 0.6, y: 1.3, w: 12.1, h: 5.4, barDir: 'col', barGapWidthPct: 50, valAxisMinVal: 0, showLegend: false, showValue: true, dataLabelPosition: 'outEnd', dataLabelFontSize: 10, dataLabelFontFace: FONT,
+          dataLabelFormatCode: '#,##0', chartColors: [P.green], catAxisLabelFontFace: FONT, catAxisLabelFontSize: 10, valAxisLabelFontFace: FONT, valAxisLabelFontSize: 9,
+          valAxisLabelFormatCode: '#,##0,,"M"', valGridLine: { color: 'E5E1D6', size: 1 }, catGridLine: { style: 'none' } });
+      rodape(ev);
+    }
+    var d = new Date(), pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    return pres.writeFile({ fileName: 'Orcamento_SSMA_' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '.pptx' });
+  }
+
+  document.addEventListener('srvchange', render);
+  render();
+  A.gestaoModel = model;
+})();
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var A = window.RApp, C = A.C, $ = A.$, esc = A.esc, fmt = A.fmt, sgn = A.sgn;
+  var root = $('#historico');
+
+  function ajustesHTML(rows) {
+    if (!rows.length) return '<p class="hint">Sem ajustes registrados.</p>';
+    return '<div class="tablewrap"><table><thead><tr><th>Centro de custo</th><th>Conta</th><th class="n">Sobra / estouro</th><th>Mês</th><th class="n">Valor atual</th><th class="n">Novo valor</th><th>Situação</th></tr></thead><tbody>' +
+      rows.map(function (a) {
+        return '<tr><td>' + esc(a.centro_custo) + '</td><td>' + esc(a.conta) + '</td><td class="n ' + (a.diferenca > 0 ? 'pos' : 'neg') + '">' + sgn(Number(a.diferenca)) + '</td><td>' + esc(a.mes) + '</td>' +
+          '<td class="n">' + (a.valor_atual === '' ? '' : fmt(Number(a.valor_atual))) + '</td><td class="n">' + (a.novo_valor === '' ? '' : fmt(Number(a.novo_valor))) + '</td><td>' + esc(a.situacao) + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  function load() {
+    if (!A.hasServer()) {
+      root.innerHTML = '<h2 class="t" style="font-size:1.25rem">Histórico dos ciclos</h2><p class="hint">Configure o servidor no botão do topo para ver os ciclos guardados.</p>'; return;
+    }
+    root.innerHTML = '<h2 class="t" style="font-size:1.25rem">Histórico dos ciclos</h2><p class="hint">Buscando...</p>';
+    A.api('listCycles').then(function (j) {
+      if (!j.ciclos.length) { root.innerHTML = '<h2 class="t" style="font-size:1.25rem">Histórico dos ciclos</h2><p class="hint">Nenhum ciclo guardado ainda.</p>'; return; }
+      root.innerHTML = '<h2 class="t" style="font-size:1.25rem">Histórico dos ciclos</h2><div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Criado em</th><th>Ciclo</th><th>Situação</th><th class="n">Sobras</th><th class="n">Estouros</th><th class="n">Divergências</th><th>Observação</th><th></th></tr></thead><tbody>' +
+        j.ciclos.map(function (c) {
+          return '<tr><td>' + esc(A.dataBR(c.criado_em)) + '</td><td>' + (c.mes_fechado ? esc(c.mes_fechado) + ' para ' + esc(c.mes_destino) : '—') + '</td>' +
+            '<td><span class="tag ' + (c.status === 'confirmado' ? 'ok' : 'warn') + '">' + esc(c.status) + '</span></td><td class="n">' + (c.sobra === '' ? '' : fmt(Number(c.sobra))) + '</td>' +
+            '<td class="n">' + (c.estouro === '' ? '' : fmt(Number(c.estouro))) + '</td><td class="n">' + (c.divergencias === '' ? '' : c.divergencias) + '</td><td>' + esc(c.observacao || '') + '</td>' +
+            '<td><button class="ghost ver" data-id="' + esc(c.ciclo_id) + '" type="button">Ver ajustes</button></td></tr><tr class="det" data-for="' + esc(c.ciclo_id) + '" hidden><td colspan="8"></td></tr>';
+        }).join('') + '</tbody></table></div>';
+      root.querySelectorAll('button.ver').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var row = root.querySelector('tr.det[data-for="' + b.dataset.id + '"]'), cell = row.firstChild;
+          if (!row.hidden) { row.hidden = true; return; }
+          cell.innerHTML = '<p class="hint">Buscando...</p>'; row.hidden = false;
+          A.api('getAjustes', { ciclo_id: b.dataset.id }).then(function (r) { cell.innerHTML = ajustesHTML(r.ajustes); })
+            .catch(function (e) { cell.innerHTML = '<p class="msg bad">' + esc(e.message) + '</p>'; });
+        });
+      });
+    }).catch(function (e) {
+      root.innerHTML = '<h2 class="t" style="font-size:1.25rem">Histórico dos ciclos</h2><p class="msg bad">' + esc(e.message) + '</p>';
+    });
+  }
+  document.addEventListener('tab', function (e) { if (e.detail === 'historico') load(); });
+  root.innerHTML = '<h2 class="t" style="font-size:1.25rem">Histórico dos ciclos</h2>';
+})();
+
+</script>
+<script>
+document.dispatchEvent(new Event('app-ready'));
 </script>
 </body>
 </html>
