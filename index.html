@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Replanejador SSMA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --green: #07583C;
+    --lime: #B3DD64;
+    --gold: #FCB952;
+    --red: #DF4636;
+    --ink: #1A2E1A;
+    --muted: #5A7A5A;
+    --rail: #F0F9F0;
+    --line: #D5E5D5;
+    --page: #FAFCFA;
+    --lime-soft: #EAF5CF;
+    --gold-soft: #FEEFD3;
+    --red-soft: #FBE1DD;
+  }
+  * { box-sizing: border-box; }
+  html { font-size: 15px; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font-family: 'Open Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    line-height: 1.5; font-variant-numeric: tabular-nums;
+  }
+  h1, h2, h3, p { margin: 0; }
+  :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+  .top { background: var(--green); color: #fff; padding: 20px 28px; border-bottom: 4px solid var(--lime); }
+  .top h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.01em; }
+  .top p { margin-top: 4px; color: #CFE6D6; max-width: 70ch; font-size: .93rem; }
+
+  .work { display: grid; grid-template-columns: 340px minmax(0, 1fr); min-height: calc(100vh - 92px); }
+  .rail { background: var(--rail); border-right: 1px solid var(--line); padding: 22px 22px 40px; }
+  .rail section + section { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--line); }
+  .rail h2 { font-size: 1rem; font-weight: 700; color: var(--green); margin-bottom: 10px; }
+  .hint { color: var(--muted); font-size: .85rem; margin-bottom: 10px; }
+
+  .slot { display: block; border: 1.5px dashed #9DBE9D; border-radius: 6px; padding: 12px 14px; background: #fff; cursor: pointer; margin-bottom: 12px; }
+  .slot:hover, .slot.over { background: var(--lime-soft); border-color: var(--green); }
+  .slot.ok { border-style: solid; border-color: var(--green); }
+  .slot.err { border-color: var(--red); background: var(--red-soft); }
+  .slot b { display: block; font-weight: 600; }
+  .slot small { display: block; color: var(--muted); font-size: .82rem; }
+  .slot .fname { margin-top: 6px; font-size: .85rem; overflow-wrap: anywhere; }
+  .slot input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .slot:focus-within { outline: 3px solid var(--gold); outline-offset: 2px; }
+  .slot .msg-err { color: #9B2A1C; font-size: .85rem; margin-top: 6px; }
+  .verpick { margin: -4px 0 12px; font-size: .85rem; }
+  .verpick label { display: block; font-weight: 600; }
+  .verpick select { margin-top: 4px; }
+
+  label.f { display: block; font-size: .85rem; font-weight: 600; margin: 12px 0 4px; }
+  select, input[type=text], input[type=number] {
+    width: 100%; font: inherit; font-size: .92rem; padding: 7px 9px;
+    border: 1px solid #9DBE9D; border-radius: 4px; background: #fff; color: var(--ink);
+  }
+
+  .months { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 4px 0 10px; }
+  .mo { font-size: .75rem; text-align: center; padding: 5px 0; border-radius: 3px; background: #E4EEE4; color: var(--muted); }
+  .mo.past { background: #CFDCCF; color: #46604A; }
+  .mo.closed { background: var(--green); color: #fff; font-weight: 700; }
+  .mo.dest { background: var(--gold); color: var(--ink); font-weight: 700; }
+  .mo.open { background: #fff; border: 1px solid var(--line); }
+  .legend { display: flex; gap: 14px; font-size: .78rem; color: var(--muted); flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+  .cc { display: flex; gap: 8px; align-items: baseline; font-size: .88rem; padding: 3px 0; }
+  .cc input { margin-top: 3px; accent-color: var(--green); }
+  .cc span.c { color: var(--muted); font-size: .78rem; }
+
+  .out { padding: 26px 32px 60px; min-width: 0; }
+  .empty { max-width: 52ch; margin-top: 8vh; }
+  .empty h2 { font-size: 1.25rem; font-weight: 700; color: var(--green); }
+  .empty p { margin-top: 8px; color: var(--muted); }
+  .empty ol { color: var(--muted); padding-left: 1.2em; margin: 12px 0 0; }
+
+  .head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  .head h2 { font-size: 1.25rem; font-weight: 700; color: var(--green); }
+  .head p { color: var(--muted); font-size: .85rem; margin-top: 2px; }
+  button.dl {
+    font: inherit; font-weight: 600; font-size: .9rem; background: var(--green); color: #fff;
+    border: 0; border-radius: 4px; padding: 9px 16px; cursor: pointer;
+  }
+  button.dl:hover { background: #0A6E4C; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 6px; margin: 18px 0 22px; background: #fff; }
+  .stat { padding: 12px 16px; border-left: 1px solid var(--line); }
+  .stat:first-child { border-left: 0; }
+  .stat .v { font-size: 1.3rem; font-weight: 700; }
+  .stat .l { font-size: .8rem; color: var(--muted); }
+  .stat.g .v { color: var(--green); }
+  .stat.r .v { color: var(--red); }
+
+  details.ccblock { border-top: 2px solid var(--green); margin-top: 24px; }
+  details.ccblock > summary { list-style: none; cursor: pointer; padding: 10px 0; display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: baseline; }
+  details.ccblock > summary::-webkit-details-marker { display: none; }
+  details.ccblock > summary::before { content: '▸'; color: var(--green); width: 1em; }
+  details.ccblock[open] > summary::before { content: '▾'; }
+  .ccname { font-size: 1.05rem; font-weight: 700; }
+  .cccode { color: var(--muted); font-size: .82rem; }
+  .ccsum { color: var(--muted); font-size: .85rem; margin-left: auto; }
+  .ccsum b.g { color: var(--green); } .ccsum b.r { color: var(--red); }
+
+  .tablewrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  th { text-align: left; font-weight: 600; font-size: .8rem; color: var(--muted); padding: 6px 10px; border-bottom: 1px solid var(--line); background: #fff; position: sticky; top: 0; }
+  td { padding: 9px 10px; border-bottom: 1px solid #E6EFE6; vertical-align: top; }
+  th.n, td.n { text-align: right; white-space: nowrap; }
+  td .code { display: block; color: var(--muted); font-size: .75rem; }
+  .pos { color: var(--green); font-weight: 600; }
+  .neg { color: var(--red); font-weight: 600; }
+  .adj { display: flex; gap: 8px; align-items: baseline; white-space: nowrap; }
+  .adj .m { font-weight: 700; min-width: 2.4em; }
+  .adj .from { color: var(--muted); }
+  .adj .to { font-weight: 700; }
+  .tag { display: inline-block; margin-top: 5px; font-size: .75rem; padding: 2px 8px; border-radius: 10px; }
+  .tag.sobra { background: var(--lime-soft); color: #2F5A12; }
+  .tag.estouro_destino, .tag.estouro_doador, .tag.estouro_dividido { background: var(--gold-soft); color: #7A4B00; }
+  .tag.estouro_parcial, .tag.sem_folga { background: var(--red-soft); color: #9B2A1C; }
+  .falta { display: block; font-size: .78rem; color: #9B2A1C; margin-top: 2px; }
+
+  details.minor { margin-top: 30px; color: var(--muted); font-size: .88rem; }
+  details.minor summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+  .note { margin-top: 18px; font-size: .82rem; color: var(--muted); }
+
+  @media (max-width: 900px) {
+    .work { grid-template-columns: 1fr; }
+    .rail { border-right: 0; border-bottom: 1px solid var(--line); }
+    .out { padding: 20px 16px 50px; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .stat:nth-child(3) { border-left: 0; }
+    .stat:nth-child(n+3) { border-top: 1px solid var(--line); }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .slot, .mo { transition: background .15s, border-color .15s; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Replanejador SSMA</h1>
+  <p>Compara o planejado com o realizado do mês fechado e mostra onde recolocar cada sobra e cada estouro. Os arquivos são lidos no seu navegador e não saem do computador.</p>
+</header>
+
+<main class="work">
+  <aside class="rail" aria-label="Configuração">
+    <section>
+      <h2>Arquivos exportados do SAC</h2>
+      <p class="hint">Aceita o relatório de Planejamento de despesas ou o Comparativo de versão.</p>
+
+      <label class="slot" id="slot0" tabindex="-1">
+        <b>Plano anterior</b>
+        <small>O que estava planejado antes de fechar o mês (exportação do fim do ciclo passado).</small>
+        <input type="file" accept=".xlsx,.xls" id="file0">
+        <div class="fname" id="fname0">Clique ou arraste o arquivo aqui</div>
+      </label>
+      <div class="verpick" id="ver0" hidden></div>
+
+      <label class="slot" id="slot1" tabindex="-1">
+        <b>Plano atual</b>
+        <small>A nova versão, já com o realizado do mês fechado.</small>
+        <input type="file" accept=".xlsx,.xls" id="file1">
+        <div class="fname" id="fname1">Clique ou arraste o arquivo aqui</div>
+      </label>
+      <div class="verpick" id="ver1" hidden></div>
+    </section>
+
+    <section>
+      <h2>Mês do ciclo</h2>
+      <div class="months" id="timeline" aria-hidden="true"></div>
+      <div class="legend">
+        <span><i style="background:var(--green)"></i>Mês fechado</span>
+        <span><i style="background:var(--gold)"></i>Mês destino</span>
+      </div>
+      <label class="f" for="closed">Mês fechado</label>
+      <select id="closed"></select>
+      <label class="f" for="dest">Mês destino (onde recolocar a sobra)</label>
+      <select id="dest"></select>
+    </section>
+
+    <section>
+      <h2>Centros de custo</h2>
+      <div id="ccList"><p class="hint">Aparecem depois que você subir os arquivos.</p></div>
+    </section>
+
+    <section>
+      <h2>Regras</h2>
+      <label class="f" for="prefixes">Contas fora do escopo (começam com)</label>
+      <input type="text" id="prefixes" value="4121, 4122, 4123, 4128">
+      <label class="f" for="except">Exceções que ficam no escopo</label>
+      <input type="text" id="except" value="4121421007">
+      <label class="f" for="ignore">Contas que você trata à parte</label>
+      <input type="text" id="ignore" value="4121421007, 4126421300">
+      <label class="f" for="minabs">Ignorar diferenças menores que (R$)</label>
+      <input type="number" id="minabs" value="1" min="0" step="0.5">
+    </section>
+  </aside>
+
+  <section class="out" id="out" aria-live="polite"></section>
+</main>
+
+<script>
+(function (root) {
+  'use strict';
+
+  var MONTHS = ['Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez', 'Jan', 'Fev', 'Mar'];
+  var LEAF = /^\d{10}(\s|$)/; // conta razão "folha" tem 10 dígitos; grupos/subtotais têm menos
+
+  function num(x) {
+    if (x === null || x === undefined || x === '') return 0;
+    if (typeof x === 'number') return x;
+    var n = parseFloat(String(x).replace(/,/g, ''));
+    return isNaN(n) ? 0 : n;
+  }
+  function r2(x) { return Math.round((x + Number.EPSILON) * 100) / 100; }
+  function accCode(conta) { return String(conta).trim().split(/\s+/)[0]; }
+  function ccCode(cc) { return String(cc).trim().split(/\s+/)[0]; }
+  function ccName(cc) { return String(cc).trim().replace(/^\S+\s*/, ''); }
+  function unitOf(cc) {
+    var c = ccCode(cc);
+    if (c.indexOf('11') === 0) return 'JB';
+    if (c.indexOf('12') === 0) return 'PB';
+    return '';
+  }
+
+  // Descobre se o arquivo é o relatório "Planejamento" (um valor por mês)
+  // ou o "Comparativo de versão" (VERSÃO 01 / VERSÃO 02 por mês).
+  function detectFormat(rows) {
+    var r1 = rows[1] || [];
+    for (var i = 0; i < r1.length; i++) {
+      if (typeof r1[i] === 'string' && /VERS[ÃA]O\s*0?1/i.test(r1[i])) return 'comp';
+    }
+    if ((rows[2] || [])[2] === 'CONTA') return 'plan';
+    return null;
+  }
+
+  // Converte as linhas da planilha em { map: "cc||conta" -> {cc, conta, v[12]} }
+  function parseRows(rows, version) {
+    var fmt = detectFormat(rows);
+    if (!fmt) throw new Error('Não reconheci o formato. Use a exportação do relatório de Planejamento ou do Comparativo de versão.');
+    var map = new Map();
+    var label = '';
+    var i, m, r, v;
+    if (fmt === 'plan') {
+      label = String((rows[0] || [])[4] || '').trim();
+      for (i = 3; i < rows.length; i++) {
+        r = rows[i];
+        if (!r || !r[1] || !r[2] || !LEAF.test(String(r[2]))) continue;
+        var key = String(r[1]).trim() + '||' + String(r[2]).trim();
+        if (map.has(key)) continue;
+        v = [];
+        for (m = 0; m < 12; m++) v.push(num(r[4 + m]));
+        map.set(key, { cc: String(r[1]).trim(), conta: String(r[2]).trim(), v: v });
+      }
+    } else {
+      version = version === 1 ? 1 : 2;
+      label = 'Coluna VERSÃO 0' + version;
+      var cur = null;
+      for (i = 3; i < rows.length; i++) {
+        r = rows[i];
+        if (!r) continue;
+        if (r[0]) cur = r[0];
+        if (!cur || cur === 'Totais' || !r[1] || !LEAF.test(String(r[1]))) continue;
+        var k2 = String(cur).trim() + '||' + String(r[1]).trim();
+        if (map.has(k2)) continue;
+        v = [];
+        for (m = 0; m < 12; m++) v.push(num(r[2 + m * 4 + (version === 1 ? 0 : 1)]));
+        map.set(k2, { cc: String(cur).trim(), conta: String(r[1]).trim(), v: v });
+      }
+    }
+    return { fmt: fmt, label: label, map: map };
+  }
+
+  function splitList(s) {
+    return String(s || '').split(/[\s,;]+/).map(function (x) { return x.trim(); }).filter(Boolean);
+  }
+
+  // p: { plan1, plan2, closedIdx, destIdx, ccs[], excludedPrefixes[], exceptions[], ignore[], minAbs }
+  function compute(p) {
+    var zeros = []; for (var z = 0; z < 12; z++) zeros.push(0);
+    var keys = new Set();
+    p.plan1.map.forEach(function (_, k) { keys.add(k); });
+    p.plan2.map.forEach(function (_, k) { keys.add(k); });
+    var sel = new Set(p.ccs), exc = new Set(p.exceptions), ign = new Set(p.ignore);
+    var items = [], ignored = [], outOfScope = 0;
+
+    keys.forEach(function (k) {
+      var a = p.plan1.map.get(k), b = p.plan2.map.get(k), ref = b || a;
+      if (!sel.has(ccCode(ref.cc))) return;
+      var code = accCode(ref.conta);
+      var inScope = exc.has(code) || !p.excludedPrefixes.some(function (x) { return code.indexOf(x) === 0; });
+      if (!inScope) { outOfScope++; return; }
+
+      var v1 = a ? a.v : zeros, v2 = b ? b.v : zeros;
+      var planned = r2(v1[p.closedIdx]), actual = r2(v2[p.closedIdx]);
+      var diff = r2(planned - actual); // positivo = sobra, negativo = estouro
+      if (Math.abs(diff) < p.minAbs) return;
+
+      var it = { cc: ref.cc, conta: ref.conta, code: code, planned: planned, actual: actual, diff: diff, adj: [], type: '', uncovered: 0 };
+      if (ign.has(code)) { it.type = 'ignorada'; ignored.push(it); return; }
+
+      if (diff > 0) {
+        var from = v2[p.destIdx];
+        it.type = 'sobra';
+        it.adj.push({ m: p.destIdx, from: r2(from), to: r2(from + diff) });
+      } else {
+        var D = -diff, dest = v2[p.destIdx];
+        if (r2(dest) >= D - 0.005) {
+          it.type = 'estouro_destino';
+          it.adj.push({ m: p.destIdx, from: r2(dest), to: r2(dest - D) });
+        } else {
+          var open = [];
+          for (var m = p.closedIdx + 1; m < 12; m++) if (v2[m] > 0.005) open.push({ m: m, v: v2[m] });
+          var enough = open.filter(function (o) { return o.v >= D - 0.005; })
+            .sort(function (x, y) { return (y.v - x.v) || (x.m - y.m); })[0];
+          if (enough) {
+            it.type = 'estouro_doador';
+            it.adj.push({ m: enough.m, from: r2(enough.v), to: r2(enough.v - D) });
+          } else if (open.length) {
+            var rem = D;
+            open.sort(function (x, y) { return (y.v - x.v) || (x.m - y.m); });
+            for (var j = 0; j < open.length && rem > 0.005; j++) {
+              var take = Math.min(open[j].v, rem);
+              it.adj.push({ m: open[j].m, from: r2(open[j].v), to: r2(open[j].v - take) });
+              rem -= take;
+            }
+            it.uncovered = rem > 0.005 ? r2(rem) : 0;
+            it.type = it.uncovered > 0 ? 'estouro_parcial' : 'estouro_dividido';
+          } else {
+            it.type = 'sem_folga';
+            it.uncovered = r2(D);
+          }
+        }
+      }
+      items.push(it);
+    });
+
+    var byAbs = function (x, y) { return Math.abs(y.diff) - Math.abs(x.diff); };
+    items.sort(function (x, y) { return ccCode(x.cc).localeCompare(ccCode(y.cc)) || byAbs(x, y); });
+    ignored.sort(function (x, y) { return ccCode(x.cc).localeCompare(ccCode(y.cc)) || byAbs(x, y); });
+    return { items: items, ignored: ignored, outOfScope: outOfScope };
+  }
+
+  function summarize(items) {
+    var s = { sobra: 0, estouro: 0, semCobertura: 0, contas: items.length };
+    items.forEach(function (it) {
+      if (it.diff > 0) s.sobra += it.diff; else s.estouro += -it.diff;
+      s.semCobertura += it.uncovered;
+    });
+    s.sobra = r2(s.sobra); s.estouro = r2(s.estouro); s.semCobertura = r2(s.semCobertura);
+    return s;
+  }
+
+  var TYPE_TEXT = {
+    sobra: 'Sobra: somar no mês destino',
+    estouro_destino: 'Estouro: abater do mês destino',
+    estouro_doador: 'Estouro não cabe no destino: abater de outro mês',
+    estouro_dividido: 'Estouro dividido entre meses',
+    estouro_parcial: 'Estouro coberto em parte',
+    sem_folga: 'Sem saldo em nenhum mês aberto'
+  };
+
+  function csvNum(n) { return String(r2(n)).replace('.', ','); }
+  function csvText(t) { return '"' + String(t).replace(/"/g, '""') + '"'; }
+
+  function toCSV(items) {
+    var lines = ['Centro de custo;Conta razão;Planejado;Realizado;Sobra/estouro;Mês;Valor atual;Novo valor;Situação'];
+    items.forEach(function (it) {
+      var base = [csvText(it.cc), csvText(it.conta), csvNum(it.planned), csvNum(it.actual), csvNum(it.diff)];
+      var txt = TYPE_TEXT[it.type] + (it.uncovered > 0 ? ' (faltam ' + csvNum(it.uncovered) + ')' : '');
+      if (!it.adj.length) {
+        lines.push(base.concat(['', '', '', csvText(txt)]).join(';'));
+      } else {
+        it.adj.forEach(function (a) {
+          lines.push(base.concat([MONTHS[a.m], csvNum(a.from), csvNum(a.to), csvText(txt)]).join(';'));
+        });
+      }
+    });
+    return '\ufeff' + lines.join('\r\n');
+  }
+
+  var api = {
+    MONTHS: MONTHS, num: num, r2: r2, accCode: accCode, ccCode: ccCode, ccName: ccName, unitOf: unitOf,
+    detectFormat: detectFormat, parseRows: parseRows, splitList: splitList,
+    compute: compute, summarize: summarize, toCSV: toCSV, TYPE_TEXT: TYPE_TEXT
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.ReplanCore = api;
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var C = window.ReplanCore;
+  var $ = function (s) { return document.querySelector(s); };
+  var DEFAULT_CCS = ['1130739002', '1230739002', '1130739004', '1230739004'];
+  var STORE = 'replanejador.ssma.v1';
+  var state = { f: [null, null], selected: null, last: null };
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function fmt(n) { return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function sgn(n) { return (n > 0 ? '+' : '') + fmt(n); }
+
+  // ---------- preferências salvas no navegador ----------
+  function loadPrefs() {
+    try {
+      var p = JSON.parse(localStorage.getItem(STORE) || '{}');
+      ['prefixes', 'except', 'ignore', 'minabs'].forEach(function (id) { if (p[id] !== undefined) $('#' + id).value = p[id]; });
+    } catch (e) { /* sem armazenamento: segue com os padrões */ }
+  }
+  function savePrefs() {
+    try {
+      var p = {};
+      ['prefixes', 'except', 'ignore', 'minabs'].forEach(function (id) { p[id] = $('#' + id).value; });
+      localStorage.setItem(STORE, JSON.stringify(p));
+    } catch (e) { /* ignora */ }
+  }
+
+  // ---------- leitura dos arquivos ----------
+  function readRows(file) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function (e) {
+        try {
+          var wb = XLSX.read(e.target.result, { type: 'array' });
+          var ws = wb.Sheets[wb.SheetNames[0]];
+          resolve(XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null }));
+        } catch (err) { reject(err); }
+      };
+      fr.onerror = function () { reject(fr.error || new Error('Não consegui ler o arquivo.')); };
+      fr.readAsArrayBuffer(file);
+    });
+  }
+
+  function slotUI(i) {
+    var slot = $('#slot' + i), name = $('#fname' + i), ver = $('#ver' + i), f = state.f[i];
+    slot.classList.remove('ok', 'err');
+    if (!f) { name.textContent = 'Clique ou arraste o arquivo aqui'; ver.hidden = true; return; }
+    if (f.error) {
+      slot.classList.add('err');
+      name.innerHTML = esc(f.name) + '<div class="msg-err">' + esc(f.error) + '</div>';
+      ver.hidden = true; return;
+    }
+    slot.classList.add('ok');
+    var kind = f.fmt === 'plan' ? 'Planejamento' : 'Comparativo de versão';
+    name.innerHTML = esc(f.name) + '<br>' + kind + (f.parsed.label ? ', ' + esc(f.parsed.label) : '') + ', ' + f.parsed.map.size + ' contas';
+    if (f.fmt === 'comp') {
+      ver.hidden = false;
+      ver.innerHTML = '<label>Usar a coluna <select data-slot="' + i + '">' +
+        '<option value="2"' + (f.version === 2 ? ' selected' : '') + '>VERSÃO 02</option>' +
+        '<option value="1"' + (f.version === 1 ? ' selected' : '') + '>VERSÃO 01</option></select></label>';
+      ver.querySelector('select').addEventListener('change', function (e) {
+        f.version = +e.target.value; f.parsed = C.parseRows(f.rows, f.version); refresh();
+      });
+    } else { ver.hidden = true; }
+  }
+
+  function onFile(i, file) {
+    if (!file) return;
+    if (typeof XLSX === 'undefined') {
+      state.f[i] = { name: file.name, error: 'A biblioteca de leitura de Excel não carregou. Abra a página com internet.' };
+      refresh(); return;
+    }
+    readRows(file).then(function (rows) {
+      var fmt = C.detectFormat(rows);
+      if (!fmt) throw new Error('Formato não reconhecido. Use a exportação de Planejamento de despesas ou de Comparativo de versão.');
+      var f = { name: file.name, rows: rows, fmt: fmt, version: 2 };
+      f.parsed = C.parseRows(rows, f.version);
+      if (!f.parsed.map.size) throw new Error('Não encontrei contas no arquivo. Exporte com a opção "Todos" no escopo.');
+      state.f[i] = f;
+    }).catch(function (err) {
+      state.f[i] = { name: file.name, error: err.message };
+    }).then(refresh);
+  }
+
+  // ---------- controles ----------
+  function fillMonths(resetDest) {
+    var closed = $('#closed'), M = C.MONTHS;
+    if (!closed.options.length) {
+      var d = new Date(), pm = (d.getMonth() + 11) % 12, idx = (pm - 3 + 12) % 12; // mês anterior, na ordem da safra
+      M.forEach(function (m, i) { var o = document.createElement('option'); o.value = i; o.textContent = m; closed.appendChild(o); });
+      closed.value = Math.min(idx, 10);
+    }
+    var dest = $('#dest'), c = +closed.value, prev = dest.value;
+    dest.innerHTML = '';
+    for (var i = c + 1; i < 12; i++) { var o = document.createElement('option'); o.value = i; o.textContent = M[i]; dest.appendChild(o); }
+    if (!dest.options.length) return;
+    var want = !resetDest && prev !== '' && +prev > c ? +prev : Math.min(c + 3, 11);
+    dest.value = want;
+  }
+
+  function timeline() {
+    var c = +$('#closed').value, d = $('#dest').value === '' ? -1 : +$('#dest').value;
+    $('#timeline').innerHTML = C.MONTHS.map(function (m, i) {
+      var cls = i < c ? 'past' : i === c ? 'closed' : i === d ? 'dest' : 'open';
+      return '<div class="mo ' + cls + '">' + m + '</div>';
+    }).join('');
+  }
+
+  function ccOptions() {
+    var seen = new Map();
+    state.f.forEach(function (f) {
+      if (f && f.parsed) f.parsed.map.forEach(function (r) { var k = C.ccCode(r.cc); if (!seen.has(k)) seen.set(k, r.cc); });
+    });
+    return Array.from(seen.entries()).sort(function (a, b) { return a[0].localeCompare(b[0]); });
+  }
+
+  function buildCCList() {
+    var opts = ccOptions(), box = $('#ccList');
+    if (!opts.length) { box.innerHTML = '<p class="hint">Aparecem depois que você subir os arquivos.</p>'; return; }
+    if (!state.selected) state.selected = new Set(opts.map(function (o) { return o[0]; }).filter(function (c) { return DEFAULT_CCS.indexOf(c) >= 0; }));
+    box.innerHTML = opts.map(function (o) {
+      var code = o[0], full = o[1], u = C.unitOf(full);
+      return '<label class="cc"><input type="checkbox" value="' + esc(code) + '"' + (state.selected.has(code) ? ' checked' : '') + '>' +
+        '<div>' + esc(C.ccName(full)) + (u ? ' (' + u + ')' : '') + '<br><span class="c">' + esc(code) + '</span></div></label>';
+    }).join('');
+    box.querySelectorAll('input').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        if (cb.checked) state.selected.add(cb.value); else state.selected.delete(cb.value);
+        render();
+      });
+    });
+  }
+
+  // ---------- resultado ----------
+  function adjHTML(it) {
+    var h = it.adj.map(function (a) {
+      return '<div class="adj"><span class="m">' + C.MONTHS[a.m] + '</span><span class="from">' + fmt(a.from) +
+        '</span><span>→</span><span class="to">' + fmt(a.to) + '</span></div>';
+    }).join('');
+    h += '<span class="tag ' + it.type + '">' + esc(C.TYPE_TEXT[it.type]) + '</span>';
+    if (it.uncovered > 0) h += '<span class="falta">Faltam ' + fmt(it.uncovered) + ' sem cobertura</span>';
+    return h;
+  }
+
+  function rowHTML(it, withAdj) {
+    return '<tr><td>' + esc(it.conta.replace(/^\d+\s*/, '')) + '<span class="code">' + esc(it.code) + '</span></td>' +
+      '<td class="n">' + fmt(it.planned) + '</td><td class="n">' + fmt(it.actual) + '</td>' +
+      '<td class="n ' + (it.diff > 0 ? 'pos' : 'neg') + '">' + sgn(it.diff) + '</td>' +
+      (withAdj ? '<td>' + adjHTML(it) + '</td>' : '') + '</tr>';
+  }
+
+  function tableHTML(items, withAdj) {
+    return '<div class="tablewrap"><table><thead><tr><th>Conta razão</th><th class="n">Planejado</th><th class="n">Realizado</th>' +
+      '<th class="n">Sobra / estouro</th>' + (withAdj ? '<th>Ajuste proposto</th>' : '') + '</tr></thead><tbody>' +
+      items.map(function (it) { return rowHTML(it, withAdj); }).join('') + '</tbody></table></div>';
+  }
+
+  function params() {
+    return {
+      plan1: state.f[0].parsed, plan2: state.f[1].parsed,
+      closedIdx: +$('#closed').value, destIdx: +$('#dest').value,
+      ccs: Array.from(state.selected || []),
+      excludedPrefixes: C.splitList($('#prefixes').value),
+      exceptions: C.splitList($('#except').value),
+      ignore: C.splitList($('#ignore').value),
+      minAbs: Math.max(0, parseFloat($('#minabs').value) || 0)
+    };
+  }
+
+  function emptyHTML(msg) {
+    return '<div class="empty"><h2>' + msg + '</h2>' +
+      '<p>Como usar:</p><ol><li>Suba o plano anterior (o que estava planejado) e o plano atual (com o realizado do mês fechado).</li>' +
+      '<li>Confira o mês fechado e o mês destino.</li><li>Leia os ajustes por centro de custo e lance no SAC.</li></ol></div>';
+  }
+
+  function render() {
+    var out = $('#out');
+    if (!state.f[0] || !state.f[1] || state.f[0].error || state.f[1].error) {
+      out.innerHTML = emptyHTML('Suba os dois arquivos para ver os ajustes'); state.last = null; return;
+    }
+    if (!$('#dest').options.length) { out.innerHTML = emptyHTML('Não há meses em aberto depois do mês fechado'); state.last = null; return; }
+    var p = params();
+    if (!p.ccs.length) { out.innerHTML = emptyHTML('Marque ao menos um centro de custo'); state.last = null; return; }
+    var res = C.compute(p), S = C.summarize(res.items);
+    state.last = res;
+    var M = C.MONTHS;
+
+    var groups = new Map();
+    res.items.forEach(function (it) { var k = C.ccCode(it.cc); if (!groups.has(k)) groups.set(k, { cc: it.cc, items: [] }); groups.get(k).items.push(it); });
+
+    var html = '<div class="head"><div><h2>Ajustes de ' + M[p.closedIdx] + ' para ' + M[p.destIdx] + '</h2>' +
+      '<p>Plano anterior: ' + esc(state.f[0].name) + '. Plano atual: ' + esc(state.f[1].name) + '.</p></div>' +
+      '<button class="dl" id="dl" type="button"' + (res.items.length ? '' : ' disabled') + '>Baixar ajustes em CSV</button></div>';
+
+    html += '<div class="stats">' +
+      '<div class="stat g"><div class="v">' + fmt(S.sobra) + '</div><div class="l">Sobras a recolocar</div></div>' +
+      '<div class="stat r"><div class="v">' + fmt(S.estouro) + '</div><div class="l">Estouros do mês</div></div>' +
+      '<div class="stat ' + (S.semCobertura > 0 ? 'r' : '') + '"><div class="v">' + fmt(S.semCobertura) + '</div><div class="l">Estouros sem cobertura</div></div>' +
+      '<div class="stat"><div class="v">' + S.contas + '</div><div class="l">Contas com ajuste</div></div></div>';
+
+    if (!res.items.length) html += '<p class="note">Nenhuma diferença acima do limite nos centros de custo marcados.</p>';
+
+    groups.forEach(function (g) {
+      var s = C.summarize(g.items), u = C.unitOf(g.cc);
+      html += '<details class="ccblock" open><summary><span class="ccname">' + esc(C.ccName(g.cc)) + (u ? ' (' + u + ')' : '') + '</span>' +
+        '<span class="cccode">' + esc(C.ccCode(g.cc)) + '</span>' +
+        '<span class="ccsum">Sobra <b class="g">' + fmt(s.sobra) + '</b>, estouro <b class="r">' + fmt(s.estouro) + '</b></span></summary>' +
+        tableHTML(g.items, true) + '</details>';
+    });
+
+    if (res.ignored.length) {
+      html += '<details class="minor"><summary>Contas que você trata à parte (' + res.ignored.length + ')</summary>' +
+        '<p class="hint" style="margin-top:8px">Não entram nos ajustes. Estão aqui para você conferir.</p>';
+      var byCC = new Map();
+      res.ignored.forEach(function (it) { var k = it.cc; if (!byCC.has(k)) byCC.set(k, []); byCC.get(k).push(it); });
+      byCC.forEach(function (items, cc) {
+        var u = C.unitOf(cc);
+        html += '<h3 style="margin:14px 0 4px;font-size:.9rem;color:var(--ink)">' + esc(C.ccName(cc)) + (u ? ' (' + u + ')' : '') + '</h3>' + tableHTML(items, false);
+      });
+      html += '</details>';
+    }
+    html += '<p class="note">' + res.outOfScope + ' linhas de folha e depreciação ficaram fora da análise pelas regras ao lado.</p>';
+    out.innerHTML = html;
+    var dl = $('#dl');
+    if (dl) dl.addEventListener('click', download);
+  }
+
+  function download() {
+    if (!state.last || !state.last.items.length) return;
+    var blob = new Blob([C.toCSV(state.last.items)], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ajustes_' + C.MONTHS[+$('#closed').value] + '_para_' + C.MONTHS[+$('#dest').value] + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+
+  function refresh() {
+    slotUI(0); slotUI(1);
+    buildCCList();
+    fillMonths(); timeline();
+    render();
+  }
+
+  // ---------- eventos ----------
+  [0, 1].forEach(function (i) {
+    var slot = $('#slot' + i), inp = $('#file' + i);
+    inp.addEventListener('change', function () { onFile(i, inp.files[0]); inp.value = ''; });
+    slot.addEventListener('dragover', function (e) { e.preventDefault(); slot.classList.add('over'); });
+    slot.addEventListener('dragleave', function () { slot.classList.remove('over'); });
+    slot.addEventListener('drop', function (e) {
+      e.preventDefault(); slot.classList.remove('over');
+      if (e.dataTransfer.files[0]) onFile(i, e.dataTransfer.files[0]);
+    });
+  });
+  $('#closed').addEventListener('change', function () { fillMonths(true); timeline(); render(); });
+  $('#dest').addEventListener('change', function () { timeline(); render(); });
+  ['prefixes', 'except', 'ignore', 'minabs'].forEach(function (id) {
+    $('#' + id).addEventListener('change', function () { savePrefs(); render(); });
+  });
+
+  loadPrefs();
+  fillMonths(); timeline(); render();
+  window.__replanejador = { state: state, onFile: onFile, refresh: refresh };
+})();
+
+</script>
+</body>
+</html>
